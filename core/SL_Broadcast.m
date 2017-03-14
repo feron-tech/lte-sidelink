@@ -9,7 +9,8 @@ classdef SL_Broadcast
     %   cp_Len_r12          (default is 'Normal')
     %   NSLRB               (default is 25)
     %   NSLID               (default is 0)
-    %   slMode              (deafult is 1)
+    %   slMode              (default is 1)
+    %   syncGrid            (time-frequency grid pre-loaded with sync preambles)   
     %Contributors: Antonis Gotsis (antonisgotsis)
 
     properties (SetAccess = protected, GetAccess = public) % properties configured by class calling
@@ -152,7 +153,11 @@ classdef SL_Broadcast
             h.b_scramb_seq = phy_goldseq_gen (h.psbch_BitCapacity, h.NSLID);
             % scrambling sequence multiplier calculation, will be needed in
             % pusch interleaving (36.212 5.2.2.7 / 5.2.2.8)
-            h.cmux = 2*(h.NSLsymb-3);
+            if h.slMode == 1 || h.slMode == 2
+                h.cmux = 2*(h.NSLsymb-3);
+            elseif h.slMode == 3 || h.slMode == 4
+                h.cmux = 2*(h.NSLsymb-2)-3;
+            end
             % indices needed for PUSCH interleaving (36.212 5.2.2.7 / 5.2.2.8)
             % Inputs: length of f0_seq, h.cmux for SL, 2 for QPSK, 1 for single-layer            
             h.muxintlv_indices =  tran_uplink_MuxIntlvDataOnly_getIndices(  h.psbch_BitCapacity, h.cmux, 2, 1 );   
@@ -213,7 +218,7 @@ classdef SL_Broadcast
             %Sidelink BCH Transport/Physical Channel Tx Processing: SL_BCH (36.212/5.4.1) & PSBCH (36.211/9.6)
         
             % input : encoded bit-sequence (MIB-SL)
-            % output: symbol-sequence at the output of psbch encoder
+            % output: symbol-sequence at the output of psbch encoder and pre-precoder output
             
             % 36.212 5.4.1.1: Transport block CRC attachment
             a_seq = input_seq;
@@ -252,7 +257,7 @@ classdef SL_Broadcast
             
         end % SL_BCH_PSBCH_Encode
 
-        function [CRCerror_flg, output_seq, d_seq_rec]  = SL_BCH_PSBCH_Recover(h, input_seq, decodingType, targetMsgSize)
+        function [output_seq, CRCerror_flg, d_seq_rec]  = SL_BCH_PSBCH_Recover(h, input_seq, decodingType, targetMsgSize)
             %Sidelink BCH Transport/Physical Channel Rx Processing: SL_BCH (36.212/5.4.1) & PSBCH (36.211/9.6)
             
             % Inputs:
@@ -309,7 +314,7 @@ classdef SL_Broadcast
             
             % 36.212 5.4.1.1	Transport block CRC recovery
             b_seq_rec = double(c_seq_rec);
-            [ CRCerror_flg, a_seq_rec ] = tran_crc16( b_seq_rec, 'recover' );
+            [ a_seq_rec, CRCerror_flg ] = tran_crc16( b_seq_rec, 'recover' );
             
             % returned vector
             output_seq = a_seq_rec;
@@ -317,32 +322,19 @@ classdef SL_Broadcast
         
         function output_seq = CreateSubframe (h, subframe_counter)
             %Create a broadcast subframe
-            
             h.subframe_index = subframe_counter;
             input_seq = h.SLMIBs(:,subframe_counter+1);
-                
             % transport and physical channel processing
             psbch_output = SL_BCH_PSBCH_Encode(h, input_seq);
-            
             % map to grid
             psbch_grid = phy_resources_mapper(2*h.NSLsymb, h.NSLRB*h.NRBsc, h.l_PSBCH, h.subixs_PSBCH, psbch_output);
             % add pre-calculated base grid (DMRS and SSS if provided)        
             tx_output_grid = psbch_grid + h.base_grid;
-
-            % illustrate resource mapping: uncomment following lines to see
-            % a visual representation of PSBCH grid
-%             a = h.base_grid; b = [[a nan*zeros(size(a,1),1)] ; nan*zeros(1,size(a,2)+1)];
-%             pcolor(abs(b)>0); colormap([1 1 1; 1 0 0]);
-%             shading flat
-%             colormap([1 1 1; 1 0 0]);
-%             xlabel('SC-FDMA symbol');
-%             ylabel('subcarrier');
-%             keyboard;
-
+            % a visual representation of PSBCH grid : uncomment the following line
+            % visual_subframeGridGraphic(tx_output_grid);
             % time-domain transformation: in standard-compliant sidelink
             % waveforms the last symbol shoul be zeroed. This is not done here.
-            output_seq = phy_ofdm_modulate_per_subframe(struct(h), tx_output_grid);
-            
+            output_seq = phy_ofdm_modulate_per_subframe(struct(h), tx_output_grid);            
         end % CreateSubframe
         
         function [msgRecoveredFlag, h, psbch_dseq_rx] = RecoverSubframe (h, rx_config, input_seq)
