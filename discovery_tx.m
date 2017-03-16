@@ -30,6 +30,7 @@ for tested_subframe = 0:numTotSubframes-1
     elseif ismember(tested_subframe, h_slDisc_tx.l_PSDCH_selected)
         fprintf('In DISCOVERY subframe %3i\n', tested_subframe);
         tx_output_sf = CreateSubframe (h_slDisc_tx, tested_subframe);
+        
     end
     
     % total tx waveform loading: broadcast or discovery or nothing

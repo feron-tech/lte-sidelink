@@ -14,7 +14,7 @@ NSLRB               = 25;                       % Sidelink bandwidth configurati
 NSLID               = 301;                      % SLSSID: Physical layer sidelink synchronization identity: 0..335 (default 0)
 slMode              = 1;                        % Sidelink Mode: 1, 2, 3 or 4. For SL-DCH there is no difference. For SL-BCH 1 is equivalent with 2 and 3 is equivalent with 4. Set 1 or 2 for D2D, 3 or 4 for V2V (default : 1)
 syncOffsetIndicator = 0;                        % SL-SyncConfig: Offset indicator for sync subframe with respect to subframe #0: 0..39 (default : 0)
-syncPeriod          = 10;                       % sync subframe period # subframes. Although this is fixed to 40 in the standard, it is allowed to be flexibly configured (default : 40).
+syncPeriod          = 40;                       % sync subframe period # subframes. Although this is fixed to 40 in the standard, it is allowed to be flexibly configured (default : 40).
 % SL DISCOVERY Configuration 
 discPeriod_r12      = 32;                       % SL-DiscResourcePoool: 32,64,128,256,512,1024 radio frames
 offsetIndicator_r12 = 0;                        % SL-OffsetIndicator : 0..10239 (time offset)
@@ -22,7 +22,7 @@ subframeBitmap_r12  = repmat([0;1;1;1;0],8,1);  % SL-TF-ResourceConfig: size 40 
 numRepetition_r12   = 5;                        % SL-DiscResourcePoool: 1..5 (subframeBitmap_r12 repetitions)
 prb_Start_r12       = 2;                        % SL-TF-ResourceConfig: 0.99
 prb_End_r12         = 22;                       % SL-TF-ResourceConfig: 0.99
-prb_Num_r12         = 10;                       % SL-TF-ResourceConfig: 1..100             
+prb_Num_r12         = 8;                       % SL-TF-ResourceConfig: 1..100             
 numRetx_r12         = 2;                        % SL-DiscResourcePool: 0..3 (msg retransmissions)
 networkControlledSyncTx = 1;                    % RRCConnectionReconfiguration: on-off sync signals 
 syncTxPeriodic          = 1;                    % SL-SyncConfig: single-shot or periodic sync         
@@ -30,7 +30,7 @@ discType            = 'Type1';                  % 'Type1','Type2B': resource all
 % Tx-Only. For Rx we will define a search space for monitoring messages
 if isequal(discType,'Type1')
     % determine dummy UEs resource indices 
-    n_PSDCHs        = [0; 120];                 % Scheduling-Based: resource allocation index, determining Time and Freq Resources per Msg
+    n_PSDCHs        = [0; 6];                 % Scheduling-Based: resource allocation index, determining Time and Freq Resources per Msg
 elseif isequal(discType,'Type2B')
     discPRB_Index   = [1; 1];                   % SL-DiscConfig (discTF_IndexList): 1..50
     discSF_Index    = [1; 2];                   % SL-DiscConfig (discTF_IndexList): 1..200

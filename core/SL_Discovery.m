@@ -592,6 +592,11 @@ classdef SL_Discovery
         function [output_seq] = CreateSubframe (h, subframe_counter)
             %Create a discovery subframe for given subframe index
             
+            persistent x;
+            if isempty(x)
+                x = 0;
+            end
+            
             h.subframe_index = subframe_counter; % timing
             
             fprintf('\nCreating discovery subframe for subframe %i...\n',subframe_counter);
@@ -607,8 +612,7 @@ classdef SL_Discovery
                 % assigned prbs for current msg/tx opportunity
                 current_prbs = h.m_PSDCH_selected{ix,txIndices(ix)};
                 fprintf('\tLoading Message for n_PSDCH = %3i, transmission %i/%i ',h.n_PSDCHs(msgIndices(ix)),txIndices(ix),size(h.l_PSDCH_selected,2));
-                fprintf('( PRBs: '); fprintf('%i ', current_prbs(:)); fprintf(')\n');
-                
+                fprintf('( PRBs: '); fprintf('%i ', current_prbs(:)); fprintf(')\n');                
                 % Ggenerate a random discovery TB (the 2nd argument is optional. it used for setting a fixed seed)
                 discTB = GenerateDiscoveryTB(h, subframe_counter);
                 % transport and physical channel processing --> psdch sequence
@@ -623,8 +627,8 @@ classdef SL_Discovery
                 tx_output_grid = tx_output_grid +  tx_output_grid_current;
                 % time-domain transformation: in standard-compliant sidelink waveforms the last symbol shoul be zeroed. This is not done here.
                 tx_output = phy_ofdm_modulate_per_subframe(struct(h), tx_output_grid);                
-                % visually illustrate resource mapping
-                % visual_subframeGridGraphic(tx_output_grid);                                
+                % visually illustrate resource mapping                
+                % visual_subframeGridGraphic(tx_output_grid);
             end % all messages
             
             % return sequence
