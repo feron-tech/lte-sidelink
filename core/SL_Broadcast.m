@@ -322,32 +322,19 @@ classdef SL_Broadcast
         
         function output_seq = CreateSubframe (h, subframe_counter)
             %Create a broadcast subframe
-            
             h.subframe_index = subframe_counter;
             input_seq = h.SLMIBs(:,subframe_counter+1);
-                
             % transport and physical channel processing
             psbch_output = SL_BCH_PSBCH_Encode(h, input_seq);
-            
             % map to grid
             psbch_grid = phy_resources_mapper(2*h.NSLsymb, h.NSLRB*h.NRBsc, h.l_PSBCH, h.subixs_PSBCH, psbch_output);
             % add pre-calculated base grid (DMRS and SSS if provided)        
             tx_output_grid = psbch_grid + h.base_grid;
-
-            % illustrate resource mapping: uncomment following lines to see
-            % a visual representation of PSBCH grid
-%             a = h.base_grid; b = [[a nan*zeros(size(a,1),1)] ; nan*zeros(1,size(a,2)+1)];
-%             pcolor(abs(b)>0); colormap([1 1 1; 1 0 0]);
-%             shading flat
-%             colormap([1 1 1; 1 0 0]);
-%             xlabel('SC-FDMA symbol');
-%             ylabel('subcarrier');
-%             keyboard;
-
+            % a visual representation of PSBCH grid : uncomment the following line
+            % visual_subframeGridGraphic(tx_output_grid);
             % time-domain transformation: in standard-compliant sidelink
             % waveforms the last symbol shoul be zeroed. This is not done here.
-            output_seq = phy_ofdm_modulate_per_subframe(struct(h), tx_output_grid);
-            
+            output_seq = phy_ofdm_modulate_per_subframe(struct(h), tx_output_grid);            
         end % CreateSubframe
         
         function [msgRecoveredFlag, h, psbch_dseq_rx] = RecoverSubframe (h, rx_config, input_seq)

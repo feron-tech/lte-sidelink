@@ -10,10 +10,10 @@ function [output_seq] = phy_equalizer(ce_params, dmrs_seq, l_data, subIXs, input
 
 
 % create channel object at first subframe call
-persistent chan_est_obj;
-if isempty(chan_est_obj)
-    chan_est_obj = SL_ChannelEstimator(ce_params);
-end
+% persistent chan_est_obj;
+% if isempty(chan_est_obj)
+chan_est_obj = SL_ChannelEstimator(ce_params);
+% end
 
 % extract DMRS symbol sequence from grid to perform channel estimation
 l_dmrs = ce_params.l_DMRS; % the symbol positions carrying the pilots (e.g for d2d 3, 10)
