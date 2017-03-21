@@ -53,8 +53,7 @@ slCommConfig = struct('scPeriod_r12',scPeriod_r12,'offsetIndicator_r12',offsetIn
     'prb_Start_r12',prb_Start_r12, 'prb_End_r12', prb_End_r12, 'prb_Num_r12', prb_Num_r12,...
     'networkControlledSyncTx',networkControlledSyncTx, 'syncTxPeriodic',syncTxPeriodic );
 slUEconfig   = struct('nPSCCH', nPSCCH, 'HoppingFlag', HoppingFlag, 'ITRP', ITRP, 'RBstart', RBstart, 'Lcrbs', Lcrbs, 'mcs_r12', mcs_r12, 'nSAID',nSAID);
-
-tx_output = communication_tx( slBaseConfig, slSyncConfig, slCommConfig, slUEconfig );
+tx_output = communication_tx( slBaseConfig, slSyncConfig, slCommConfig, slUEconfig);
 
 fprintf('Tx Waveform Created...\n');
 

@@ -10,13 +10,18 @@ h_slSync_rx  = SL_Sync(slSyncConfig, slBaseConfig);
 h_slBroad_rx = SL_Broadcast(slBaseConfig, h_slSync_rx.sync_grid);
 h_slComm_rx  = SL_Communication(slBaseConfig, slSyncConfig, slDiscConfig, slUEConfig,'Rx');
 
-%% searching for PSCCH  based on a defined nPSCCH space
-fprintf('\n -- Searching for SCI0 messages in the whole input waveform --\n');
-h_slComm_rx = SCI0_Search_Recover(h_slComm_rx, rxConfig, rx_input);
+if isequal(h_slComm_rx.slMode,1) || isequal(h_slComm_rx.slMode,2) % D2D: searching for PSCCH  based on a defined nPSCCH space
+    % search and decode sci
+    fprintf('\n -- Searching for SCI0 messages in the whole input waveform --\n');
+    h_slComm_rx = SCI0_Search_Recover(h_slComm_rx, rxConfig, rx_input);
+    % decode data in resources designated by SCI-0 recovered messages
+    fprintf('\n -- Recovering data from the input waveform based on recovered SCI0s --\n');
+    Data_Recover (h_slComm_rx, rxConfig, rx_input);
 
-%% decode data in resources designated by SCI-0 recovered messages
-fprintf('\n -- Recovering data from the input waveform based on recovered SCI0s --\n');
-Data_Recover (h_slComm_rx, rxConfig, rx_input);
+elseif isequal(h_slComm_rx.slMode,3) || isequal(h_slComm_rx.slMode,4) % V2V
+    fprintf('\n -- Searching for SCI1 messages and recover respective Data in the whole input waveform --\n');
+    h_slComm_rx = SCI1_Data_Search_Recover(h_slComm_rx, rxConfig, rx_input);
+end
 
 %% decode broadcast
 fprintf('\n --Detecting broadcast information in the whole input waveform --\n');
