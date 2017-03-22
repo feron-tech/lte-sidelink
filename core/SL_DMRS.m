@@ -881,7 +881,9 @@ classdef SL_DMRS
                 fgh = zeros(1,2); %initialization
                 for slot = 0:1
                     for i = 0:7
-                        fgh(slot+1) = fgh(slot+1) + c(8*(h.nPSSCHss+slot)+i+1) * 2^i;
+                        %fgh(slot+1) = fgh(slot+1) + c(8*(h.nPSSCHss+slot)+i+1) * 2^i;
+                        % changed by AG, check it with SS
+                        fgh(slot+1) = fgh(slot+1) + c(8*(h.nPSSCHss/2+slot)+i+1) * 2^i;
                     end
                 end
                 
