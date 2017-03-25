@@ -960,7 +960,6 @@ classdef SL_Communication
             
         end % function : Get_V2X_Data_ResourcesPerUE
         
-        
         function h = Get_V2X_PSSCH_Dimensioning(h, mcs, NPRBs, userIndex)
             % determines basic phy dimensioning
             
@@ -1057,7 +1056,6 @@ classdef SL_Communication
             fprintf('SCI-1 (%i bits) message %x (hex format) generated\n', length(sci1_tb), bitTodec(sci1_tb,true));
             output_seq = sci1_tb;
         end % function : GenerateSCI1TB
-        
         
         function [nsubCHstart, LsubCH, SFgap, mcs_r14, ReTx] = ReadSCI1TB (h, input_seq)
             %Readsout SCI Format-1 information (36.212 - 5.4.3.1.1)
@@ -1459,9 +1457,10 @@ classdef SL_Communication
             
             fprintf('%i Data transport blocks will be recovered based on information provided by detected SCI-0 messages\n', length(h.nPSCCH));
             for i = 1:length(h.nPSCCH) % for each potential message found
-                fprintf('\nDetecting data transport block %i/%i (for UE = %i)\n',i,length(h.nPSCCH), h.nPSCCH(i));
+                fprintf('\nDetecting data transport block %i/%i (for UE = %i) in subframes ... ',i,length(h.nPSCCH), h.nPSCCH(i));
                 % subframes where data resides
                 l_PSSCH = h.l_PSSCH_selected{i};
+                fprintf(' %i ',l_PSSCH); fprintf('\n');
                 % sl-sch input message
                 sch_input =  -ones(h.pssch_BitCapacity(i),1);
                 sch_part_len = length(sch_input)/h.PSSCH_PHY_NSFs;
@@ -1554,8 +1553,7 @@ classdef SL_Communication
 
         end % function CreateV2XSubframe
         
-        
-         function h = SCI1_Data_Search_Recover(h, rx_config, rx_input)
+        function h = SCI1_Data_Search_Recover(h, rx_config, rx_input)
            %searches and recover information from possible sidelink sci format 1 messages (v2x)
            %then for every recovered sci-1 msg tries to decode the respective data channel
            
