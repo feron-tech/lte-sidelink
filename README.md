@@ -44,6 +44,10 @@ Further details for the 3GPP D2D/V2V standardization and implementation could be
   * Physical Signals and Channels for Control Signaling: SCI Format 0, PSCCH, SL-SCH, PSSCH, PSCCH DMRS
   * Physical Signals and Channels for Payload : SL-SCH, PSSCH, PSSCH DMRS
   * Subframe/PRB communication pool formation & UE-specific resource allocation
+* V2X sidelink communication mode :new:
+  * Physical Signals and Channels for L1 signaling: SCI Format 1 (V2V), PSCCH, PSCCH DMRS
+  * Physical Signals and Channels for Payload: V2X PSSCH, PSSCH DMRS
+  * Subframe/PRB pool formation & UE-specific resource allocation for V2X communication
 * Synchronization preambles (PSSS, SSSS) construction & recovery
 * Subframe creation, loading and time-domain signal transformation
 * Complete receiver processing functionality for sidelink-compliant waveforms
@@ -52,12 +56,6 @@ Further details for the 3GPP D2D/V2V standardization and implementation could be
   * channel estimation and equalization
   * signal demodulation/decoding
 * Example scripts for configuring and running full sidelink broadcast, discovery, communication transceiver simulation scenarios
-
-#### Upcoming Features
-* V2X sidelink communication mode
-  * Physical Signals and Channels for L1 signaling: SCI Format 1 (V2V), PSCCH, PSCCH DMRS
-  * Physical Signals and Channels for Payload: V2X PSSCH, PSSCH DMRS
-  * Subframe/PRB pool formation & UE-specific resource allocation for V2X communication
 
 ### Repository Structure
 * The **home** directory includes scripts for testing sidelink functionality
@@ -69,7 +67,7 @@ Further details for the 3GPP D2D/V2V standardization and implementation could be
 * Convolution channel coding has been applied for sidelink discovery and communication modes transport channel processing, instead of standard-compliant turbo coding.
 * Testing of the code has been done in MATLAB R2016b.
 
-### Walkthrough Example 1: Sidelink broadcast/synchronization transceiver simulation
+### Example 1: Sidelink broadcast/synchronization transceiver simulation
 The example provides a high-level walkthrough for setting up, configuring, and running a complete transceiver simulation scenario for the sidelink broadcast channel. The example includes (refer to file [sidelink_broadcast_tester.m](sidelink_broadcast_tester.m)):
 * The generation of sidelink-compliant broadcast subframes in frequency and time domains.
 * The generation and application of noise, delay, and frequency-offset impairments to the ideal waveform.
@@ -188,7 +186,7 @@ Again, for the default configuration you may simply call the recovery function a
 broadcast_rx(struct(), struct(), struct(), rx_input);
 ```
 
-### Walkthrough Example 2: Sidelink discovery transceiver simulation
+### Example 2: Sidelink discovery transceiver simulation
 #### A short introduction to D2D Discovery
 The sidelink discovery mode is used for sending (in a broadcast way) short messages to neighbor UEs. Protocol processing is extremely light; in essence each message corresponds to a single PHY transport block, containing no higher-ligher additional overhead. How to fill the transport block is left open, and depends on the underlying D2D application. To support timing reference recovery at the monitoring D2D UEs, the announcing D2D UE(s) trigger the transmission of broadcast/synchronization subframes as described in the previous example. The sidelink discovery transmission/reception procedure involves two key functionalities:
 * Selection of time (subframes) and frequency (PRBs) resources for announcing/monitoring discovery messages. Sidelink resource allocation is realized in two levels:
@@ -285,7 +283,7 @@ Recovered Discovery Messages
 It is clear that both discovery messages contained in the tx waveform have been recovered successfully at the receiver side.
 
 
-### Walkthrough Example 3: Sidelink communication transceiver simulation
+### Example 3: Sidelink communication transceiver simulation
 #### A short introduction to the D2D Communication mode
 The sidelink communication mode is used for typical data applications such as VoIP and on-demand video-streaming. Compared to the the discovery mode, the data-rate and reliability requirements are more demanding. Thus, a more complex protocol has been drafted. In particular:
 * Resource allocation, both on mode-specific and user-specific levels, is very similar to the approach described in the discovery mode: based on L3 (RRC) or L1 (DCI) signaling, a subset of uplink cell resources are first made available for sidelink communication transmissions (forming respective subframe and PRB resouce pools), and then, at a second stage specific resources are assigned to competing UEs.
@@ -312,7 +310,7 @@ User-specific resource allocation and transmission configurarion is determined u
 * ```ITRP``` : a 7-bit bitmap used to determine the exact subframes picked from the sidelink communication resource pool for the specific PSSCH transmission.
 
 #### Running the example
-An example "mode-1" configuration is shown below. Notice that in addition to the aforementioned parameters we have included: i) a parameter called ```n_PSCCHs_monitored``, determing which resources the receiving UE will monitor for identifying potential SCI Format 0  messages, ii) a set of three parameters, i.e. ``decodingType```, ```chanEstMethod```, and ```timeVarFactor```, used for tuning channel estimation and channel decoding operations at the receiver side, similarly to the the discovery/broadcast subframe decoding procedures.
+An example "mode-1" configuration is shown below. Notice that in addition to the aforementioned parameters we have included: i) a parameter called ```n_PSCCHs_monitored```, determing which resources the receiving UE will monitor for identifying potential SCI Format 0  messages, ii) a set of three parameters, i.e. ``decodingType```, ```chanEstMethod```, and ```timeVarFactor```, used for tuning channel estimation and channel decoding operations at the receiver side, similarly to the the discovery/broadcast subframe decoding procedures.
 
 ```
 NSLRB                   = 25;
@@ -614,7 +612,7 @@ Nothing found
 
 Searching for SCI0 message for nPSCCH = 19
 Nothing found
-
+#### 
 Searching for SCI0 message for nPSCCH = 20
 Nothing found
 
@@ -691,6 +689,214 @@ CRC detection ok
 
 Detecting data transport block 2/2 (for UE = 30)
 CRC detection ok
+```
+
+### Example 4: Sidelink V2X communication transceiver simulation :new:
+#### Introduction to the Sidelink V2X communication mode
+The use of the sidelink interface for vehicle-to-vehicle (V2V) or vehicle-to-infrastructure communications has been introduced in the 3GPP standard in Rel.14. Sidelink V2X is heavily based on the Rel.12/13 sidelink communication mode. Two new sidelink communication modes are introduced in the respective 3GPP TSs/TRs, i.e. mode-3 and mode-4 (in addition to existing mode-1 and mode-2) to distinguish V2X from "Standard" D2D. The following new features and "tweaks" have been applied for coping with the peculiar features of the vehicle communications use cases, namely higher channel variability, lower required latency, and increased devices density:
+* The number of demodulation reference signals carried in each subframe for V2X PSBCH, PSCCH and PSSCH has increased in order to capture frequent channel changes. In standard D2D two DMRSs are used in each subframe, while in V2X PSBCH there are three DMRSs and in V2X PSCCH/PSSCH there are four.
+* V2X transmission control (PSCCH) and data (PSSCH) are carried in the same subframe, differently from standard D2D where control and data subframe pools are clearly distinguished. This new feature allows to decode a PSSCH immediately after a PSCCH is recovered. 
+* PSCCH and PSSCH for V2X transmission may be assigned adjacent PRBs. Specifically, each PSCCH is loaded in two consecutive PRBs in a single subframe, whereas in standard D2D one PRB and two subframes are used. PSSCH PRB allocation may start at the next available PRB of the pool after PSCCH is considered or at any other PRB for the non-adjacent mode.
+* PRBs are organized in groups called "subchannels", and frequency-based resource allocation is configured with subchannel granularity.
+* LTE enB controls V2X communication using L1 DCI Format 5A messages, whereas in standard D2D this is done using Format 5 messages.
+* A new control message, called SCI Format 1 (SCI-1), is introduced for informing receiving V2X UEs about the selected time-frequency resource allocation (time and frequency based) and the transmission configuration (modulation/coding scheme, re-transmission opportunity).
+* SCI Format 1 transport and physical channel processing steps are the same with that of standard D2D (SCI Format 0), except for a slight difference in the PUSCH interleaver sequence generation.
+* V2X SL-SCH processing is the same with that of standard D2D except for PUSCH interleaver sequence generation.
+* V2X PSSCH processing differs from standard PSSCH only in the gold sequence definition. For standard D2D the sequence is generated based on the group destination ID (```nSAID```) whereas in V2X the CRC checksum of the PSCCH is used (```nXID```).
+* Each Data transmission block (SL-SCH) is not split into 4 subframes as in the standard D2D, but it spans exactly a single subframe. A re-transmission of the same block in a subsequent subframe belonging to the V2V resources pool is allowed.
+* Only normal cyclic prefix length is allowed in the V2X communication mode.
+
+#### Configuration
+The configuration of the V2X communication setup is very similar to that of standard D2D communication. Two V2X sidelink modes are defined, mode-3 which specifies a "fully-controlled" (by the LTE eNB) resources allocation approach and mode-4 which corresponds to an autonomous approach. Currently only mode-3 is fully supported by the library.
+
+With respect to the communication-specific configuration, the following parameters are used. Notice that these correspond to IEs from the newly defined (in Rel.14) SL-V2XCommResourcePool L3 structure:
+* ```v2xSLSSconfigured``` : determines if synchronization/broadcast subframes are triggered by the V2X transmission.
+* ```sl_OffsetIndicator_r14``` : indicates the offset (with respect to SFN/DFN #0) of the first subframe of the V2X communication subframes resource pool.
+* ```sl_Subframe_r14```: 16/20/100-length bitmap indicating the subframes that are available for V2X PSCCH/PSSCH.
+* ```sizeSubchannel_r14``` : indicates the size of the subchannel (in terms of number of PRBs) in the corresponding resource pool; acceptable lengths are: 4, 5, 6, 8, 10, 12, 15,16, 18, 20, 25, 30, 48, 50, 72, 75, 96, and 100.
+* ```numSubchannel_r14``` :  indicates the number of subchannels contained in the corresponding resource pool; acceptable configurations are 1, 3, 5, 10, 15, and 20. 
+* ```startRB_Subchannel_r14``` : indicates the lowest RB index of the subchannel with the lowest index.
+* ```adjacencyPSCCH_PSSCH_r14``` : indicates if adjacent PRBs should be assigned for control (PSCCH) and data (PSSCH).
+* ```startRB_PSCCH_Pool_r14``` : for non-adjacent PSCCH/PSSCH PRB assigment, it indicates the lowest index of the PSCCH PRB pool.
+
+UE-specific configuration (in scheduled mode) is communicated to the transmitting V2X UE using L1 DL signaling, and in particular the DCI Format 5A structure, as well as L3 signalling, i.e. RRC and SIB messages. The following parameters are introduced:
+* ```mcs_r14``` : indicates the MCS mode;
+* ```SFgap``` : determines the gap (in the subframe domain) for retransmission opportunity of the PSCCH/PSSCH;
+* ```m_subchannel``` : determines the first transmission opportunity frequency offset, in particular the lowest index of the subchannel allocation used in first PSCCH/PSSCH transmission;
+* ```nsubCHstart``` : as in the ```m_subchannel``` definition, but for the second tranmission opportunity;
+* ```LsubCH``` : determines the number of subchannels assigned to the UE;
+
+An example configuration is provided below:
+```
+NSLRB                           = 25;
+NSLID                           = 301;
+slMode                          = 3;
+cp_Len_r12                      = 'Normal';
+syncOffsetIndicator             = 0;
+syncPeriod                      = 20; 
+v2xSLSSconfigured               = true;
+sl_OffsetIndicator_r14          = 40; 
+sl_Subframe_r14                 = repmat([0;1;1;0],5,1); 
+sizeSubchannel_r14              = 4;
+numSubchannel_r14               = 3; 
+startRB_Subchannel_r14          = 2; 
+adjacencyPSCCH_PSSCH_r14        = true;
+startRB_PSCCH_Pool_r14          = 14; 
+networkControlledSyncTx         = 1;
+syncTxPeriodic                  = 1;          
+mcs_r14                         = [3; 4];
+m_subchannel                    = [0; 0];
+nsubCHstart                     = [1; 1];                           
+LsubCH                          = [2; 1];
+SFgap                           = [1; 0];
+decodingType                    = 'Soft';
+chanEstMethod                   = 'LS';
+timeVarFactor                   = 0;
+```
+
+#### Running the example
+
+V2X-compliant tx waveform is generated in the following way:
+```
+slBaseConfig = struct('NSLRB',NSLRB,'NSLID',NSLID,'cp_Len_r12',cp_Len_r12, 'slMode',slMode);
+slSyncConfig = struct('syncOffsetIndicator', syncOffsetIndicator,'syncPeriod',syncPeriod);
+slV2XCommConfig = struct('v2xSLSSconfigured',v2xSLSSconfigured,'sl_OffsetIndicator_r14',sl_OffsetIndicator_r14,'sl_Subframe_r14',sl_Subframe_r14,....
+    'sizeSubchannel_r14',sizeSubchannel_r14,'numSubchannel_r14',numSubchannel_r14, 'startRB_Subchannel_r14',startRB_Subchannel_r14,...
+    'adjacencyPSCCH_PSSCH_r14',adjacencyPSCCH_PSSCH_r14,'startRB_PSCCH_Pool_r14',startRB_PSCCH_Pool_r14);
+slV2XUEconfig = struct('mcs_r14',mcs_r14, 'm_subchannel', m_subchannel, 'nsubCHstart', nsubCHstart, 'LsubCH', LsubCH, 'SFgap', SFgap);
+
+tx_output = communication_tx( slBaseConfig, slSyncConfig, slV2XCommConfig, slV2XUEconfig );
+```
+AWGN channel may be induced in the following way:
+```
+SNR_target_dB = 30; % set SNR
+noise = sqrt((1/2)*10^(-SNR_target_dB/10))*complex(randn(length(tx_output),1), randn(length(tx_output),1)); % generate noise
+rx_input = tx_output + noise; % induce it to the waveform
+```
+Finally, the recovery/decoding operations for the processed waveform are called using the following snippet:
+
+```
+communication_rx(slBaseConfig, slSyncConfig, slV2XCommConfig,  ...
+    struct(), ...
+    struct('decodingType',decodingType, 'chanEstMethod',chanEstMethod, 'timeVarFactor',timeVarFactor),...
+    rx_input );
+```
+The decoder initially searches (blindly) for SCI Format 1 messages, and if it detects one recovers the information contained in it and decodes accordingly the corresponding PSSCH. An example run for two "virtual" V2X UE transmissions is provided below:
+```
+===========================================================
+PSCCH and PSSCH V2X COMMUNICATION RESOURCES POOL FORMATION 
+===========================================================
+V2X Communication Period starts @ subframe #40 and ends at subframe #239
+( SLSS Subframes : 0 20 40 60 80 100 120 140 160 180 200 220 )
+V2X PSxCH Subframe pool (total 100 subframes)
+( V2X PSxCH Subframes : 41 42 45 46 49 50 53 54 57 58 61 62 65 66 69 70 73 74 77 78 81 82 85 86 89 90 93 94 97 98 101 102 105 106 109 110 113 114 117 118 121 122 125 126 129 130 133 134 137 138 141 142 145 146 149 150 153 154 157 158 161 162 165 166 169 170 173 174 177 178 181 182 185 186 189 190 193 194 197 198 201 202 205 206 209 210 213 214 217 218 221 222 225 226 229 230 233 234 237 238 )
+V2X PSSCH PRB Pool contains  3 subchannels, of size  4 PRBs each, with lowest PRB index of subchannel #0 =  2
+	[Subchannel  0] PRBs :  2  3  4  5 
+	[Subchannel  1] PRBs :  6  7  8  9 
+	[Subchannel  2] PRBs : 10 11 12 13 
+V2X PSCCH PRB Pool contains  3 subchannels, of size  2 PRBs each, with lowest PRB index of subchannel #0 =  2
+	[Subchannel  0] PRBs :  2  3 
+	[Subchannel  1] PRBs :  6  7 
+	[Subchannel  2] PRBs : 10 11 
+============================================================
+UE-specific Control Channel (PSCCH) V2X Resource Allocation 
+============================================================
+ PSCCH Subframes for user 1 : 41 42 
+ PSCCH PRBs for user 1 (txOp = 1): 2 3 
+ PSCCH PRBs for user 1 (txOp = 2): 6 7 
+ PSCCH Subframes for user 2 : 45 
+ PSCCH PRBs for user 2 (txOp = 1): 2 3 
+=========================================================
+UE-specific Data Channel (PSSCH) V2X Resource Allocation 
+=========================================================
+ PSSCH Subframes for user 1 : 41 42 
+ PSSCH PRBs for user 1 (txOp = 1): 4 5 6 7 8 9 
+ PSSCH PRBs for user 1 (txOp = 2): 8 9 10 11 12 13 
+[UE 0] PSSCH Transport Block Size = 328 bits (Mod Order : 2).
+	PSSCH Bit Capacity = 1440 bits  (Symbol Capacity = 720 samples).
+ PSSCH Subframes for user 2 : 45 
+ PSSCH PRBs for user 2 (txOp = 1): 4 5 
+[UE 0] PSSCH Transport Block Size = 120 bits (Mod Order : 2).
+	PSSCH Bit Capacity = 480 bits  (Symbol Capacity = 240 samples).
+
+Loading Subframe 41 with V2X-PSCCH for user 1 (tx op: #1) [Used PRBs :  2  3 ]
+SCI-1 (32 bits) message 1046000 (hex format) generated
+
+Loading Subframe 41 with V2X-PSSCH for user 1 (tx op: #1) [nXID = 41310][Used PRBs :  4  5  6  7  8  9 ]
+
+Loading Subframe 42 with V2X-PSCCH for user 1 (tx op: #2) [Used PRBs :  6  7 ]
+SCI-1 (32 bits) message 1047000 (hex format) generated
+
+Loading Subframe 42 with V2X-PSSCH for user 1 (tx op: #2) [nXID = 41517][Used PRBs :  8  9 10 11 12 13 ]
+
+Loading Subframe 45 with V2X-PSCCH for user 2 (tx op: #1) [Used PRBs :  2  3 ]
+SCI-1 (32 bits) message 408000 (hex format) generated
+
+Loading Subframe 45 with V2X-PSSCH for user 2 (tx op: #1) [nXID = 1589][Used PRBs :  4  5 ]
+
+Tx Waveform Passed from Channel...
+
+Rx Waveform Processing Starting...
+===========================================================
+PSCCH and PSSCH V2X COMMUNICATION RESOURCES POOL FORMATION 
+===========================================================
+V2X Communication Period starts @ subframe #40 and ends at subframe #239
+( SLSS Subframes : 0 20 40 60 80 100 120 140 160 180 200 220 )
+V2X PSxCH Subframe pool (total 100 subframes)
+( V2X PSxCH Subframes : 41 42 45 46 49 50 53 54 57 58 61 62 65 66 69 70 73 74 77 78 81 82 85 86 89 90 93 94 97 98 101 102 105 106 109 110 113 114 117 118 121 122 125 126 129 130 133 134 137 138 141 142 145 146 149 150 153 154 157 158 161 162 165 166 169 170 173 174 177 178 181 182 185 186 189 190 193 194 197 198 201 202 205 206 209 210 213 214 217 218 221 222 225 226 229 230 233 234 237 238 )
+V2X PSSCH PRB Pool contains  3 subchannels, of size  4 PRBs each, with lowest PRB index of subchannel #0 =  2
+	[Subchannel  0] PRBs :  2  3  4  5 
+	[Subchannel  1] PRBs :  6  7  8  9 
+	[Subchannel  2] PRBs : 10 11 12 13 
+V2X PSCCH PRB Pool contains  3 subchannels, of size  2 PRBs each, with lowest PRB index of subchannel #0 =  2
+	[Subchannel  0] PRBs :  2  3 
+	[Subchannel  1] PRBs :  6  7 
+	[Subchannel  2] PRBs : 10 11 
+============================================================
+UE-specific Control Channel (PSCCH) V2X Resource Allocation 
+============================================================
+
+ -- Searching for SCI1 messages and recover respective Data in the whole input waveform --
+
+FOUND an SCI-1 message in [Subframe 41, PRB set : 2  3 ]
+Information Recovery from SCI-1 message 1046000 (hex format)
+Frequency resource location (INT)                                    :  4
+Time gap between initial transmission and retransmission  (INT)      :  1
+Modulation and Coding (INT)                                          :  3
+Retransmission index                                                 :  0
+Reserved information bits (INT)                                      :  0
+	(FRL Bitmap --> nsubCHstart = 1, LsubCH = 2)
+Recovering Data Message in corresponding resources
+[UE 0] PSSCH Transport Block Size = 328 bits (Mod Order : 2).
+	PSSCH Bit Capacity = 1440 bits  (Symbol Capacity = 720 samples).
+CRC detection ok
+
+FOUND an SCI-1 message in [Subframe 42, PRB set : 6  7 ]
+Information Recovery from SCI-1 message 1047000 (hex format)
+Frequency resource location (INT)                                    :  4
+Time gap between initial transmission and retransmission  (INT)      :  1
+Modulation and Coding (INT)                                          :  3
+Retransmission index                                                 :  1
+Reserved information bits (INT)                                      :  0
+	(FRL Bitmap --> nsubCHstart = 1, LsubCH = 2)
+Recovering Data Message in corresponding resources
+[UE 0] PSSCH Transport Block Size = 328 bits (Mod Order : 2).
+	PSSCH Bit Capacity = 1440 bits  (Symbol Capacity = 720 samples).
+CRC detection ok
+
+FOUND an SCI-1 message in [Subframe 45, PRB set : 2  3 ]
+Information Recovery from SCI-1 message 408000 (hex format)
+Frequency resource location (INT)                                    :  1
+Time gap between initial transmission and retransmission  (INT)      :  0
+Modulation and Coding (INT)                                          :  4
+Retransmission index                                                 :  0
+Reserved information bits (INT)                                      :  0
+	(FRL Bitmap --> nsubCHstart = 1, LsubCH = 1)
+Recovering Data Message in corresponding resources
+[UE 0] PSSCH Transport Block Size = 120 bits (Mod Order : 2).
+	PSSCH Bit Capacity = 480 bits  (Symbol Capacity = 240 samples).
+CRC detection ok
+
 ```
 
 ### Acknowledgement
