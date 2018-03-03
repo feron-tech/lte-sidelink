@@ -69,8 +69,8 @@ Further details for the 3GPP D2D/V2X standardization and implementation could be
 * Testing of the code has been done in MATLAB R2016b.
 
 
-### Acknowledgement
-Part of the activities leading to this library received funding from the European Union’s Seventh Framework Programme under grant agreement no 612050, ["FLEX Project"](http://www.flex-project.eu/), and in particular FLEX Open Call 2 Project [“FLEX-D: Experimenting with Flexible D2D communications Over LTE”](http://www.flex-project.eu/open-calls/2nd-open-call/results). FLEX-D is carried out by Feron Technologies and University of Piraeus Research Centre, Greece.
+### Acknowledgementss
+Part of the activities leading to the first version of the library received funding from the European Union’s Seventh Framework Programme under grant agreement no 612050, ["FLEX Project"](http://www.flex-project.eu/), and in particular FLEX Open Call 2 Project [“FLEX-D: Experimenting with Flexible D2D communications Over LTE”](http://www.flex-project.eu/open-calls/2nd-open-call/results). FLEX-D carried out by Feron Technologies and University of Piraeus Research Centre, Greece, from April 2016 to April 2017. Since then the library has been maintained by Feron Technologies. From October 2017, further developments are also partially funded from Fed4Fire+ Open Call 2 Project ["FIVE"](https://www.fed4fire.eu/) and RAWFIE Open Call 2 Project ["PARROT"](http://www.rawfie.eu/).
 
 ### Support
 
