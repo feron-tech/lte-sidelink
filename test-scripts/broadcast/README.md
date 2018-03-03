@@ -22,7 +22,7 @@ Parameter | Description | Acceptable Settings | Default Configuration
 ```NSLID``` | Sidelink Physical Layer Synchronization ID | ```0``` - ```335```| ```0```
 ```slMode``` | Sidelink Transmission Mode (D2D, V2V) | ```1```,```2```,```3```,```4```| ```1```
 ```syncOffsetIndicator``` | Sync Subframe Offset Indicator (w.r.t. subframe #0) | ```0``` - ```39```| ```0```
-```syncPeriod``` | Sync Subframe Period (in # subframes) | ```1``` - ```40``` | ```40```
+```syncPeriod``` | Sync Subframe Period (in # subframes) | ```1``` - ```160``` | ```40```
 ```decodingType``` | Symbol Decoding Type | ```'Soft'```,```'Hard'``` | ```'Soft'```
 ```chanEstMethod``` | Channel Estimation Method | ```'LS'```,```'mmse-direct'``` | ```'LS'```
 ```timeVarFactor``` | Estimated Channel Doppler Frequency  | ```0``` or a value ```>0``` (Hz) | ```0```
