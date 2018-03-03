@@ -615,6 +615,7 @@ classdef SL_DMRS
                 h.DRSSymInfo.SeqIdx = v_s;
                 h.DRSSymInfo.RootSeq = q_vec;
                 h.DRSSymInfo.OrthoSeq = reshape(orth_code,h.NLayers,2);
+                %h.DRSSymInfo
                 
                 %MIMO precoding (return in column form)
                 if (h.NLayers==1) && (h.NTxAnts==1)
@@ -677,7 +678,6 @@ classdef SL_DMRS
                 h.DRSSymInfo.RootSeq = q_vec;
                 h.DRSSymInfo.OrthoSeq = reshape(orth_code,h.NLayers,2);
                 
-                
                 layerseq = layerseq(1:12 * h.N_PRB * 3); % discard the 4th DMRS symbol, as this mode only uses the first 3
                 antseq = layerseq.';
                 
@@ -718,8 +718,7 @@ classdef SL_DMRS
                 h.DRSSymInfo.SeqIdx = v_s;
                 h.DRSSymInfo.RootSeq = q_vec;
                 h.DRSSymInfo.OrthoSeq = reshape(orth_code,h.NLayers,2);
-                
-                
+                  
                 antseq = layerseq.';
                 
             elseif strcmp(h.Mode,'pscch_mode3') || strcmp(h.Mode,'pscch_mode4')
@@ -756,7 +755,7 @@ classdef SL_DMRS
                 h.DRSSymInfo.SeqIdx = v_s;
                 h.DRSSymInfo.RootSeq = q_vec;
                 h.DRSSymInfo.OrthoSeq = reshape(orth_code,h.NLayers,2);
-                
+
                 antseq = layerseq.';
             end % end of options
             
@@ -1111,7 +1110,6 @@ classdef SL_DMRS
 
             elseif strcmp(h.Mode,'pscch_mode1') || strcmp(h.Mode,'pscch_mode2') || strcmp(h.Mode,'pscch_mode3') || strcmp(h.Mode,'pscch_mode4')
                 wOOC = [1, 1];
-                
             elseif strcmp(h.Mode,'pusch')
                 if strcmp(h.OrthoCover,'Off')
                     wOOC = ones(1, 2 * h.NLayers);

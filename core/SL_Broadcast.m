@@ -355,7 +355,7 @@ classdef SL_Broadcast
             % visual_subframeGridGraphic(tx_output_grid);
             % time-domain transformation: in standard-compliant sidelink
             % waveforms the last symbol shoul be zeroed. This is not done here.
-            output_seq = phy_ofdm_modulate_per_subframe(struct(h), tx_output_grid);            
+            output_seq = phy_ofdm_modulate_per_subframe(struct(h), tx_output_grid); 
         end % CreateSubframe
         
         function [msgRecoveredFlag, h, psbch_dseq_rx] = RecoverSubframe (h, rx_config, input_seq)
