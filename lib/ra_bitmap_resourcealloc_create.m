@@ -1,4 +1,4 @@
-function ra_bitmap = ra_bitmap_resourcealloc_create(NRBs, RBstart, Lcrbs)
+function [ra_bitmap, RIV] = ra_bitmap_resourcealloc_create(NRBs, RBstart, Lcrbs)
 %Creates resource allocation bitmap for given contiguous resource
 %allocation
 % inputs: NRBs (total number of resouce blocks); RBstart (Starting RB

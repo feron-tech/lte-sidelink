@@ -1,25 +1,12 @@
-function broadcast_rx(slBroadConfig, slSyncConfig, rxConfig, rx_input)
-%broadcast_rx is a high-level function for recovering sidelink broadcast
-%channel transmissions given an arbitrary number of (time-domain)
-%subframes.
-% Inputs:
-% 1) slBroadConfig is a struct determining broadcast configuration, including:
-%       cp_Len_r12 : 'Normal' or 'Extended', default is 'Normal.
-%       NSLRB      : 6, 15, 25, 50, 75, 100, default is 25.
-%       NSLID      : 0..335, default is 0.
-%       slMode     : 1, 2, 3, 4, default is 1.
-% 2) slSyncConfig is a struct determiningh_slBroad_rx synchronization configuration, including:
-%       syncOffsetIndicator : 0..39, default is 0
-%       syncPeriod          : 1..40, default is 40.
-% 3) rxConfig is a struct determining rx processing configiration including:
-%       decodingType  : 'Soft' or 'Hard', default is 'Soft'
-%       chanEstMethod : 'LS' or 'mmse-direct', default is 'LS'
-%       timeVarFactor : 0..100, default is 0.
-% Provide empty structs for default settings
+function discovery_rx(slBaseConfig, slSyncConfig, slDiscConfig, slUEConfig, rxConfig, rx_input )
+%discovery_rx is a high-level function for recovering sidelink discovery channel transmissions given an arbitrary number of (time-domain) subframes.
+% Information about the input fields can be found at the sidelink_discovery_tester example and the SL_Discovery class.
+% Provide empty structs for default settings 
 
 % create objects
-h_slSync_rx  = SL_Sync(slSyncConfig, slBroadConfig); 
-h_slBroad_rx = SL_Broadcast(slBroadConfig, h_slSync_rx.sync_grid);
+h_slSync_rx  = SL_Sync(slSyncConfig, slBaseConfig); 
+h_slBroad_rx = SL_Broadcast(slBaseConfig, h_slSync_rx.sync_grid);
+h_slDisc_rx  = SL_Discovery(slBaseConfig, slSyncConfig, slDiscConfig, slUEConfig);
 
 samples_per_subframe = h_slBroad_rx.samples_per_subframe;
 
@@ -35,6 +22,7 @@ local_subframe_index = -1; % index for actual subframe timing (recovered from SL
 
 % KPIs
 psbch_detections = []; % stores psbch detection results for all attempts: 1 for successful, 0 for misdetection
+discovered_msgs_recovered = [];
 
 for block = 0:N_blocks-1 % I/Q block processing, as arriving from digitizer
     
@@ -45,8 +33,8 @@ for block = 0:N_blocks-1 % I/Q block processing, as arriving from digitizer
         previous_frame      = 0.001*complex(randn(samples_per_subframe,1), randn(samples_per_subframe,1));
         post_previous_frame = 0.001*complex(randn(samples_per_subframe,1), randn(samples_per_subframe,1));
     else % normal operation
-        post_previous_frame = previous_frame;
-        previous_frame = current_frame;
+        % Readjustment if sync point is marginally at the end of the frame:
+        [h_slSync_rx, post_previous_frame, previous_frame, counter] = determine_frame_accession(h_slSync_rx, rx_input, previous_frame, samples_per_subframe, counter);
     end
     current_frame = rx_input(counter : counter - 1 + samples_per_subframe);
 
@@ -71,7 +59,7 @@ for block = 0:N_blocks-1 % I/Q block processing, as arriving from digitizer
             h_slSync_rx = synchronizer(h_slSync_rx, previous_frame, current_frame);
             h_slSync_rx = freq_offset_estimate(h_slSync_rx, previous_frame, current_frame);
         end
-        if h_slSync_rx.sync_point < 0
+        if h_slSync_rx.sync_point <= 0
             signal = [post_previous_frame(end+h_slSync_rx.sync_point:end); previous_frame; current_frame(1:end+h_slSync_rx.sync_point-1)];
             h_slSync_rx.sync_point = 1;            
         else
@@ -101,10 +89,7 @@ for block = 0:N_blocks-1 % I/Q block processing, as arriving from digitizer
             % get subframe index
             % current_sf_index = subframe_counter - nn + 1;
             
-            % VERSION 1: blindly try to recover BCH at every possible subframe
-            % [msgRecoveredFlag, ~, psbch_dseq_rx] = RecoverSubframe (h_slBroad_rx, rxConfig, h_slSync_rx.synched_blocks(:,end-nn+1));
-            
-            % VERSION 2: initially search blindly and after acquiring timing, search at specfic subframes based on syncPeriod
+            % initially search blindly and after acquiring timing, search at specfic subframes based on syncPeriod
             if local_subframe_index == -1 % initially recover the input blindly
                 [msgRecoveredFlag, h_slBroad_rx]  = RecoverSubframe (h_slBroad_rx,  rxConfig, h_slSync_rx.synched_blocks(:,end-nn+1));
                 % check if broadcast info has been acquired
@@ -114,26 +99,35 @@ for block = 0:N_blocks-1 % I/Q block processing, as arriving from digitizer
                     local_subframe_index = h_slBroad_rx.subframe_index;
                     % move to next subframe
                     local_subframe_index = local_subframe_index + 1;
+                    if local_subframe_index == 10240, local_subframe_index = 0; end
                 end
-            else % timing acquired --> recover at specific subframes only (since we know the period!)
-                if mod(local_subframe_index,h_slSync_rx.syncPeriod) == h_slSync_rx.syncOffsetIndicator
-                    %if exist('tstart','var')
-                    %    tmp2 = [tmp2; toc(tstart)];
-                    %    %keyboard
-                    %end
-                    fprintf('Trying to decode BCH in the expected subframe\n');
+            else % timing acquired --> we now know actual subframe timing!
+               
+                % time-domain signal
+                input_signal = h_slSync_rx.synched_blocks(:,end-nn+1);
+                
+                % Case 1: Broadcast Subframe
+                if ismember(local_subframe_index,  h_slDisc_rx.subframes_SLSS)
+                    fprintf('Trying to decode BCH in the expected subframe (%i)\n', local_subframe_index);
                     psbch_detections = [psbch_detections; 0]; % initialize result
-                    [msgRecoveredFlag, h_slBroad_rx]  = RecoverSubframe (h_slBroad_rx,  rxConfig, h_slSync_rx.synched_blocks(:,end-nn+1));
+                    [msgRecoveredFlag, h_slBroad_rx]  = RecoverSubframe (h_slBroad_rx,  rxConfig, input_signal);
+                     % resync subframe counter according to latest bch decoding
+                    local_subframe_index = h_slBroad_rx.subframe_index;
                     psbch_detections(end) = msgRecoveredFlag;
-                    %tstart = tic;
-                    %keyboard
-                end                
+                % Case 2: Discovery Subframe
+                elseif ismember(local_subframe_index, h_slDisc_rx.l_PSDCH_selected)
+                    fprintf('Monitoring DCH in the expected subframe (%i)\n', local_subframe_index);
+                    discovered_msgs_current = DiscoveryMonitoring(h_slDisc_rx, input_signal, local_subframe_index);
+                    % keep all messages                    
+                    discovered_msgs_recovered = [discovered_msgs_recovered; discovered_msgs_current];
+                end
                 % move to next subframe
                 local_subframe_index = local_subframe_index + 1;
+                if local_subframe_index == 10240, local_subframe_index = 0; end
            end
         end      % symbols_processed
         symbols_processed = 0;
-    end % in status-2 (sync found)    keyboard
+    end % in status-2 (sync found)
 
     %% Update counters
     counter = counter + samples_per_subframe;
@@ -144,5 +138,11 @@ end % block processing (as they arrive from digitizer)
 
 fprintf('\nOverall PSBCH Detection Ratio = %.2f (%i/%i successful attempts)\n', mean(psbch_detections), sum(psbch_detections), length(psbch_detections));
 
+% analyze recovered discovery messages
+fprintf('\nOverall Recovered Discovery Messages\n');
 
+for ix = 1:length(discovered_msgs_recovered)
+fprintf('\t[At Subframe %5i: Found nPSDCH = %3i]\n', ...
+    discovered_msgs_recovered(ix).subframe_counter, discovered_msgs_recovered(ix).nPSDCH);
 end
+

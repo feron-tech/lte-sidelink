@@ -90,16 +90,13 @@ end
 if isequal(mode, 'encode')    
     output_seq(:,1) = input_seq(e_IXs);
 elseif isequal(mode, 'recover')
-    if E>=3*D        
+    if E>=3*D
         output_seq(e_IXs(1:3*D)) = input_seq(1:3*D);
     else
-        % append repetitions                
-        input_seq_rx = [];
-        for ni = 1:floor(3*D/E), input_seq_rx = [input_seq_rx; input_seq]; end
-        if floor(3*D/E)*E < 3*D, input_seq_rx = [input_seq_rx; input_seq(1:3*D-floor(3*D/E)*E,1)]; end        
-        output_seq(w_IXs) = input_seq_rx;        
-        %y = output_seq(e_IXs);        
-    end    
+        output_seq(e_IXs(1:E)) = input_seq(1:E);
+        % zero nan elements
+        output_seq(isnan(output_seq))=0;
+    end
 end
 
    
