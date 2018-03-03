@@ -143,6 +143,11 @@ classdef SL_Broadcast
             h.psbch_dmrs_seq = h_psbch_dmrs.DMRS_seq();
             h.psbch_drms_seq_grid = phy_resources_mapper(2*h.NSLsymb, h.NSLRB*h.NRBsc, h.l_PSBCH_DMRS, h.subixs_PSBCH, h.psbch_dmrs_seq);
             
+            % mtlb toolbox comparison
+            %[seq,info] = ltePSBCHDRS(struct('NSLID',h.NSLID,'SidelinkMode','V2X'));
+            %psbchDMRS_ft_mtlb_ok = sum(abs(h.psbch_dmrs_seq-seq).^2)<1e-8
+            %if ~psbchDMRS_ft_mtlb_ok, cprintf('red','PSBCH DMRS Generation: error in comparison with matlab toolbox\n'); keyboard; end
+                        
             % create the MIB-SL messages for all subframes in a full tx
             % cycle (10240 subframes). Results stored in property h.SLMIBs
             h.SLMIBs = Encode_SLMIBs(h);
@@ -237,6 +242,11 @@ classdef SL_Broadcast
             % 36.212 5.2.2.7 / 5.2.2.8 PUSCH Interleaving without any control information              
             g0_seq = f0_seq(h.muxintlv_indices);
 
+            % mtlb toolbox comparison
+            %cw = lteSLBCH(struct('SidelinkMode','V2X'), input_seq);
+            %slbch_ft_mtlb_ok = isequal(double(g0_seq(:)),double(cw(:)));
+            %if ~slbch_ft_mtlb_ok, cprintf('red','SL BCH Processing: error in comparison with matlab toolbox\n'); keyboard; end
+            
             % phy processing initialization
             b_seq = g0_seq;
             
@@ -251,6 +261,11 @@ classdef SL_Broadcast
             
             % 36.211 : 9.6.4 Transform Precoding    
             y_seq = phy_transform_precoding(x_seq,h.Msc_PSBCH);
+            
+            % mtlb toolbox comparison
+            %pssch = ltePSBCH(struct('NSLID',h.NSLID), g0_seq);
+            %psbch_ft_mtlb_ok = sum(abs(pssch-y_seq).^2)<1e-8
+            %if ~psbch_ft_mtlb_ok, cprintf('red','PSBCH Processing: error in comparison with matlab toolbox\n'); keyboard; end
             
             % returned sequence
             output_seq = y_seq;
@@ -324,6 +339,12 @@ classdef SL_Broadcast
             %Create a broadcast subframe
             h.subframe_index = subframe_counter;
             input_seq = h.SLMIBs(:,subframe_counter+1);
+            
+            % mtlb toolbox comparison
+            %mibslout = lteSLMIB(struct('NSLRB',h.NSLRB,'NFrame',floor(subframe_counter/10),'NSubframe',mod(subframe_counter,10)));
+            %mibsl_ft_mtlb_ok = isequal(double(input_seq(:)),double(mibslout(:)));
+            %if ~mibsl_ft_mtlb_ok, cprintf('red','MIB SL message construction: error in comparison with matlab toolbox\n'); keyboard; end
+            
             % transport and physical channel processing
             psbch_output = SL_BCH_PSBCH_Encode(h, input_seq);
             % map to grid

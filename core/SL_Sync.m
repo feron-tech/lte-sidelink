@@ -83,7 +83,7 @@ classdef SL_Sync
             else % default
                 h.syncPeriod = 40;
             end
-            assert(h.syncPeriod>=1 & h.syncPeriod<=40,'Invalid setting of Period. Valid range: 1..40');
+            assert(h.syncPeriod>=1 & h.syncPeriod<=160,'Invalid setting of Period. Valid range: 1..160');
 
             % 2nd input: phy conf
             slBroadConfig = varargin{2};
@@ -658,6 +658,28 @@ classdef SL_Sync
             fprintf('Sync Point : %i\n',h.sync_point);
             
         end % synchronizer
+        
+        function [h, post_previous_frame, previous_frame, counter] = determine_frame_accession(h, rx_input, previous_frame, samples_per_subframe, counter)
+            
+            % Readjustment if sync point is marginally at the end of the frame:
+            if ~isempty(h.psss_point)
+                if (h.psss_point(1) == 2*h.cpLen0)
+                    counter = counter  - samples_per_subframe/2;
+                    h.psss_point = h.psss_point + samples_per_subframe/2;
+                    h.ssss_point = h.ssss_point + samples_per_subframe/2;
+                    h.sync_point = h.sync_point + samples_per_subframe/2;
+                elseif (h.psss_point(1) == 2*h.cpLen0 + samples_per_subframe)
+                    counter = counter  + samples_per_subframe/2;
+                    h.psss_point = h.psss_point - samples_per_subframe/2;
+                    h.ssss_point = h.ssss_point - samples_per_subframe/2;
+                    h.sync_point = h.sync_point - samples_per_subframe/2;
+                end
+                post_previous_frame = rx_input(counter - 2*samples_per_subframe:counter-samples_per_subframe-1);
+            else
+                post_previous_frame = previous_frame;
+            end
+            previous_frame = rx_input(counter - samples_per_subframe:counter-1);
+        end
         
     end % class methods
     

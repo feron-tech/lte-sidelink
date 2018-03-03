@@ -45,8 +45,8 @@ for block = 0:N_blocks-1 % I/Q block processing, as arriving from digitizer
         previous_frame      = 0.001*complex(randn(samples_per_subframe,1), randn(samples_per_subframe,1));
         post_previous_frame = 0.001*complex(randn(samples_per_subframe,1), randn(samples_per_subframe,1));
     else % normal operation
-        post_previous_frame = previous_frame;
-        previous_frame = current_frame;
+        % Readjustment if sync point is marginally at the end of the frame:
+        [h_slSync_rx, post_previous_frame, previous_frame, counter] = determine_frame_accession(h_slSync_rx, rx_input, previous_frame, samples_per_subframe, counter);
     end
     current_frame = rx_input(counter : counter - 1 + samples_per_subframe);
 
@@ -71,7 +71,7 @@ for block = 0:N_blocks-1 % I/Q block processing, as arriving from digitizer
             h_slSync_rx = synchronizer(h_slSync_rx, previous_frame, current_frame);
             h_slSync_rx = freq_offset_estimate(h_slSync_rx, previous_frame, current_frame);
         end
-        if h_slSync_rx.sync_point < 0
+        if h_slSync_rx.sync_point <= 0 % IN THE OLD VERSION IT WAS <0
             signal = [post_previous_frame(end+h_slSync_rx.sync_point:end); previous_frame; current_frame(1:end+h_slSync_rx.sync_point-1)];
             h_slSync_rx.sync_point = 1;            
         else
@@ -121,7 +121,7 @@ for block = 0:N_blocks-1 % I/Q block processing, as arriving from digitizer
                     %    tmp2 = [tmp2; toc(tstart)];
                     %    %keyboard
                     %end
-                    fprintf('Trying to decode BCH in the expected subframe\n');
+                    fprintf('Trying to decode BCH in the expected subframe (SFN=%i)\n',mod(floor(local_subframe_index/10),1024));
                     psbch_detections = [psbch_detections; 0]; % initialize result
                     [msgRecoveredFlag, h_slBroad_rx]  = RecoverSubframe (h_slBroad_rx,  rxConfig, h_slSync_rx.synched_blocks(:,end-nn+1));
                     psbch_detections(end) = msgRecoveredFlag;

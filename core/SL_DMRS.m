@@ -371,6 +371,7 @@ classdef SL_DMRS
                 end
             end %check: PSCCH mode 1 and 2
             
+            % -------------------- V2X PSCCH ----------------------------
             if strcmp(h.Mode, 'pscch_mode3') || strcmp(h.Mode, 'pscch_mode4')
                 if isfield(pch,'NCS')
                     assert(pch.NCS==0 | pch.NCS==3 | pch.NCS==6 | pch.NCS==9,'NCS should be equal to {0, 3, 6, 9}');
@@ -883,7 +884,9 @@ classdef SL_DMRS
                     for i = 0:7
                         %fgh(slot+1) = fgh(slot+1) + c(8*(h.nPSSCHss+slot)+i+1) * 2^i;
                         % changed by AG, check it with SS
-                        fgh(slot+1) = fgh(slot+1) + c(8*(h.nPSSCHss/2+slot)+i+1) * 2^i;
+                        %fgh(slot+1) = fgh(slot+1) + c(8*(h.nPSSCHss/2+slot)+i+1) * 2^i;
+                        % changed by AG, check it with SS
+                        fgh(slot+1) = fgh(slot+1) + c(8*(2*h.nPSSCHss+slot)+i+1) * 2^i;
                     end
                 end
                 
@@ -915,10 +918,10 @@ classdef SL_DMRS
                 %perform Group hopping (only option for pssch)
                 u_slts = mod(h.f_gh(n_ID) + mod(floor(n_ID/16),30), 30);
                 
-                
-            elseif strcmp(h.Mode,'pscch_mode1') || strcmp(h.Mode,'pscch_mode2') || strcmp(h.Mode,'pscch_mode3') || strcmp(h.Mode,'pscch_mode4')
+            elseif strcmp(h.Mode,'pscch_mode1') || strcmp(h.Mode,'pscch_mode2')
                 u_slts = zeros(1,2);
-                
+            elseif strcmp(h.Mode,'pscch_mode3') || strcmp(h.Mode,'pscch_mode4')
+                u_slts = [8,8];
             elseif strcmp(h.Mode,'pusch')
                 D_ss = h.SeqGroup;
                 if h.NPUSCHID >= 0
@@ -1076,14 +1079,19 @@ classdef SL_DMRS
             %                                         each row corresponds to layers 0,1,2,3, respectively
             % Spec:        3GPP TS 36.211 section 5.5.2.1.1 v13.0.0
                              
-            if strcmp(h.Mode, 'psbch_mode1') || strcmp(h.Mode, 'psbch_mode2')...
-                    || strcmp(h.Mode, 'psbch_mode3') || strcmp(h.Mode, 'psbch_mode4')
+            if strcmp(h.Mode, 'psbch_mode1') || strcmp(h.Mode, 'psbch_mode2')
                 if mod(h.NSLID,2)==0
                     wOOC = [1, 1];
                 else
                     wOOC = [1, -1];
                 end
-                  
+            elseif  strcmp(h.Mode, 'psbch_mode3') || strcmp(h.Mode, 'psbch_mode4')
+                % THIS IS WRONG!!! TO BE REVISED
+                 if mod(h.NSLID,2)==0
+                    wOOC = [1, 1];
+                else
+                    wOOC = [1, -1];
+                end
             elseif strcmp(h.Mode,'psdch')
                 wOOC = [1, 1];
                 

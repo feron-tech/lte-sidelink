@@ -2,8 +2,8 @@
 % Contributors: Antonis Gotsis (antonisgotsis), Konstantinos Maliatsos (maliatsos), Stelios Stefanatos (steliosstefanatos)
 clear all;
 clc;
-addpath('./core');   % path where core sidelink-specific functionalities are located (Broadcast Channel, DMRS, Sync, Channel Estimator).
-addpath('./lib');    % path where generic (non-sidelink specific) tx/rx functionalities are located (signal, physical and transport channel blocks).
+addpath('../../core');   % path where core sidelink-specific functionalities are located (Broadcast Channel, DMRS, Sync, Channel Estimator).
+addpath('../../lib');    % path where generic (non-sidelink specific) tx/rx functionalities are located (signal, physical and transport channel blocks).
 warning('off','MATLAB:structOnObject'); % used to supress warning messages in struct(obj) calling
 
 
@@ -20,7 +20,7 @@ decodingType        = 'Soft';       % Decoding type for SL-BCH/PSBCH recovery. P
 chanEstMethod       = 'LS';         % Channel estimation method. Currently 'LS' and 'mmse-direct' are fully supported (default : 'LS')
 timeVarFactor       = 0;            % Channel time variance factor. Multiple of 1/(sampling rate). Typical values: 0 for static, 50 for highly time-variant (default : 0)
 % run-specific
-numTotSubframes     = 10240;        % Total number of sidelink subframes to generate starting at #0. Maximum allowed number is 10240.
+numTotSubframes     = 1024;        % Total number of sidelink subframes to generate starting at #0. Maximum allowed number is 10240.
 %% Tx
 % use the following for default configuration
 % tx_output = broadcast_tx(struct(), struct(), numTotSubframes);
