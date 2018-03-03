@@ -63,7 +63,7 @@ for block = 0:N_blocks-1 % I/Q block processing, as arriving from digitizer
     %% Have found sync...
     if h_slSync_rx.rx_status >= 2
         
-        % update counters
+        % update counters=0
         subframe_counter = subframe_counter + 1;
         symbols_processed = symbols_processed + 1;
         % sync & freq-offset estimate

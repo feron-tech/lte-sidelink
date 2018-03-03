@@ -2,8 +2,8 @@
 % Contributors: Antonis Gotsis (antonisgotsis), Konstantinos Maliatsos (maliatsos), Stelios Stefanatos (steliosstefanatos)
 clear all;
 clc;
-addpath('./core');   % path where core sidelink-specific functionalities are located (Discovery Channel, DMRS, Sync, Channel Estimator).
-addpath('./lib');    % path where generic (non-sidelink specific) tx/rx functionalities are located (signal, physical and transport channel blocks).
+addpath('../../core');   % path where core sidelink-specific functionalities are located (Discovery Channel, DMRS, Sync, Channel Estimator).
+addpath('../../lib');    % path where generic (non-sidelink specific) tx/rx functionalities are located (signal, physical and transport channel blocks).
 warning('off','MATLAB:structOnObject'); % used to supress warning messages in struct(obj) calling
 
 %% Configuration
@@ -74,7 +74,7 @@ switch NSLRB
 end
             
 % Noise
-SNR_target_dB = 20; % set SNR
+SNR_target_dB = 13; % set SNR
 noise = sqrt((1/2)*10^(-SNR_target_dB/10))*complex(randn(length(tx_output),1), randn(length(tx_output),1)); % generate noise
 rx_input = tx_output + noise; % induce it to the waveform
 

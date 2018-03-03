@@ -134,15 +134,18 @@ classdef SL_Discovery
             else % default
                 h.discPeriod_r12 = 32;
             end
-            assert(h.discPeriod_r12==32 | h.discPeriod_r12==64 | h.discPeriod_r12==128 | h.discPeriod_r12==256 | h.discPeriod_r12==512 | h.discPeriod_r12==1024,...
-                'Invalid setting of discPeriod-r12. Valid range: {32,64,128,256,512,1024}');
-
-           if isfield(slDiscConfig,'offsetIndicator_r12')
+            
+            assert(h.discPeriod_r12==4 | h.discPeriod_r12==7 | h.discPeriod_r12==8 | h.discPeriod_r12==14 | h.discPeriod_r12==16 | h.discPeriod_r12==28|...
+                h.discPeriod_r12==32 | h.discPeriod_r12==64 | h.discPeriod_r12==128 | h.discPeriod_r12==256 | h.discPeriod_r12==512 | h.discPeriod_r12==1024,...
+                'Invalid setting of discPeriod-r12. Valid values: 4,7,8,14,16,28,32,64,128,256,512,1024');
+            
+                
+            if isfield(slDiscConfig,'offsetIndicator_r12')
                 h.offsetIndicator_r12 = slDiscConfig.offsetIndicator_r12;
             else % default
                 h.offsetIndicator_r12 = 0;
             end
-            assert(h.offsetIndicator_r12>=0 & h.offsetIndicator_r12+h.discPeriod_r12*10<=10239,'Invalid setting of offsetIndicator_r12. Check it against discPeriod_r12');
+            %assert(h.offsetIndicator_r12>=0 & h.offsetIndicator_r12+h.discPeriod_r12*10<=10239,'Invalid setting of offsetIndicator_r12. Check it against discPeriod_r12');
             
             if isfield(slDiscConfig,'subframeBitmap_r12')
                 h.subframeBitmap_r12 = slDiscConfig.subframeBitmap_r12;
@@ -210,45 +213,47 @@ classdef SL_Discovery
             
             
             % --------------------------- UE-specific disc config inputs ---------------------------
-            slUEconfig = varargin{4};
-            if isequal(h.discType,'Type1')                
-                if isfield(slUEconfig,'n_PSDCHs')
-                    h.n_PSDCHs = slUEconfig.n_PSDCHs;
-                else % default
-                    h.n_PSDCHs = [0];
-                end
-            elseif isequal(h.discType,'Type2B')
-                 if isfield(slUEconfig,'discPRB_Index')
-                    h.discPRB_Index = slUEconfig.discPRB_Index;
-                 else % default
-                    h.discPRB_Index = [1];
-                 end
-                 
-                 if isfield(slUEconfig,'discSF_Index')
-                     h.discSF_Index = slUEconfig.discSF_Index;
-                 else % default
-                     h.discSF_Index = [1];
-                 end
-                 
-                 if isfield(slUEconfig,'a_r12')
-                     h.a_r12 = slUEconfig.a_r12;
-                 else % default
-                     h.a_r12 = [1];
-                 end
-                 
-                 if isfield(slUEconfig,'b_r12')
-                     h.b_r12 = slUEconfig.b_r12;
-                 else % default
-                     h.b_r12 = [1];
-                 end
-                 
-                 if isfield(slUEconfig,'c_r12')
-                     h.c_r12 = slUEconfig.c_r12;
-                 else % default
-                     h.c_r12 = [1];
-                 end
-                 
-            end % Type1 or Type2B allocation
+            if nargin == 4
+                slUEconfig = varargin{4};
+                if isequal(h.discType,'Type1')
+                    if isfield(slUEconfig,'n_PSDCHs')
+                        h.n_PSDCHs = slUEconfig.n_PSDCHs;
+                    else % default
+                        h.n_PSDCHs = [0];
+                    end
+                elseif isequal(h.discType,'Type2B')
+                    if isfield(slUEconfig,'discPRB_Index')
+                        h.discPRB_Index = slUEconfig.discPRB_Index;
+                    else % default
+                        h.discPRB_Index = [1];
+                    end
+                    
+                    if isfield(slUEconfig,'discSF_Index')
+                        h.discSF_Index = slUEconfig.discSF_Index;
+                    else % default
+                        h.discSF_Index = [1];
+                    end
+                    
+                    if isfield(slUEconfig,'a_r12')
+                        h.a_r12 = slUEconfig.a_r12;
+                    else % default
+                        h.a_r12 = [1];
+                    end
+                    
+                    if isfield(slUEconfig,'b_r12')
+                        h.b_r12 = slUEconfig.b_r12;
+                    else % default
+                        h.b_r12 = [1];
+                    end
+                    
+                    if isfield(slUEconfig,'c_r12')
+                        h.c_r12 = slUEconfig.c_r12;
+                    else % default
+                        h.c_r12 = [1];
+                    end
+                    
+                end % Type1 or Type2B allocation
+            end
             
             
             % 1) basic phy configuration: NFFT, chanSRate, cpLen0, cpLenR, NSLsymb, samples_per_subframe
@@ -268,7 +273,7 @@ classdef SL_Discovery
                 h.l_PSDCH_DMRS = [3 10]'; % (36.211-9.8)
                 h.l_PSDCH      = [0 1 2 4 5 6 7 8 9 11 12 13]'; % rest not allocated to dmrs
             elseif strcmp(h.cp_Len_r12,'Extended')
-                h.cpLen0 = round(0.25*h.NFFT); 
+                h.cpLen0 = round(0.25*h.NFFT);
                 h.cpLenR = round(0.25*h.NFFT);
                 h.NSLsymb = 6;
                 h.l_PSDCH_DMRS = [2 8]'; % (36.211-9.8)
@@ -305,7 +310,7 @@ classdef SL_Discovery
             h = GetSyncResources (h); % output: h_slDisc.subframes_SLSS --> sync/broad
             
             % Extract UE-specific resource allocation
-            [h.m_PSDCH_selected, h.l_PSDCH_selected] = GetResourcesPerUE (h);
+            %h = GetResourcesPerUE (h);
             
         end % function: SL_Discovery
         
@@ -317,8 +322,8 @@ classdef SL_Discovery
             fprintf('=======================================================\n');
             % Assume a single Discovery Period
             h.DiscPer = [h.offsetIndicator_r12, h.offsetIndicator_r12+h.discPeriod_r12*10-1];
-            fprintf('Discovery Period starts @ subframe #%i and ends at subframe #%i\n',h.DiscPer(1,1),h.DiscPer(1,2));
-
+            fprintf('Discovery Period #0 starts @ subframe #%i and ends at subframe #%i\n',h.DiscPer(1,1),h.DiscPer(1,2));
+            
             % obtain subframe bitmap
             a = h.subframeBitmap_r12;
             NB = length(a);
@@ -330,7 +335,7 @@ classdef SL_Discovery
             % subframe pool (0-based) offset not considered
             h.ls_PSDCH_RP = find(b==1) - 1;
             % add DiscPeriods(1,1) to h.ls_PSDCH for getting the actual subframe counter
-            h.ls_PSDCH_RP = h.ls_PSDCH_RP + h.DiscPer(1,1);            
+            h.ls_PSDCH_RP = h.ls_PSDCH_RP + h.DiscPer(1,1);
             fprintf('Subframe pool (total %i subframes)\n',length(h.ls_PSDCH_RP));
             fprintf('( PSDCH Subframes : '); fprintf('%i ',h.ls_PSDCH_RP); fprintf(')\n');
             
@@ -352,31 +357,33 @@ classdef SL_Discovery
             
             % info message
             fprintf('Discovery Pool formed: (%i,%i) (subframes,PRBs) per Disc Period (NTX_SLD = %i, NPRB = %i per Msg --> Nt = %i, Nf = %i)\n',...
-                length(h.ls_PSDCH_RP), length(h.ms_PSDCH_RP), h.NTX_SLD, h.DiscMsg_PHY_NPRBs, h.Nt, h.Nf);                    
+                length(h.ls_PSDCH_RP), length(h.ms_PSDCH_RP), h.NTX_SLD, h.DiscMsg_PHY_NPRBs, h.Nt, h.Nf);
+            
+            
         end % function : GetDiscResourcePool
                
         function h = GetSyncResources (h)
             %Get subframe resources for transmitting/receiving SL-SSs (36.331 - 5.10.7.3)
-              
+            
             % initialization
-            subframes_slSS = [];
+            subframes_slSS_0 = [];
             
             if h.networkControlledSyncTx == 1
-                subframes_in_currentDiscPer = (h.DiscPer(1): h.DiscPer(2))';
-                subframes_slSS =  subframes_in_currentDiscPer(mod(subframes_in_currentDiscPer, h.syncPeriod) == h.syncOffsetIndicator);
+                discSubframes_0 = (h.DiscPer(1): h.DiscPer(2))';
+                subframes_slSS_0 =  discSubframes_0(mod(discSubframes_0, h.syncPeriod) == h.syncOffsetIndicator);
                 
                 % check if the 1st SLSS subframe occurs in the 1st subframe of the pool.
                 % If not move it to the previous closest subframe indicated by syncOffsetIndicator.(36.331, 5.10.7.3)
-                while subframes_slSS(1) > h.ls_PSDCH_RP(1)
-                    subframes_slSS = subframes_slSS - h.syncPeriod;
+                while subframes_slSS_0(1) > h.ls_PSDCH_RP(1)
+                    subframes_slSS_0 = subframes_slSS_0 - h.syncPeriod;
                 end
                 
                 % non-periodic adjustment: keep first only
-                if ~h.syncTxPeriodic, subframes_slSS = subframes_slSS(1); end
+                if ~h.syncTxPeriodic, subframes_slSS_0 = subframes_slSS_0(1); end
                 
                 % check for conflict of SLSS and PSDCH
-                for slssix = 1:length(subframes_slSS)
-                    if ismember(subframes_slSS(slssix), h.ls_PSDCH_RP), fprintf('Check for possible SLSS and PSDCH conflict in subframe #%i\n', subframes_slSS(slssix)); end
+                for slssix = 1:length(subframes_slSS_0)
+                    if ismember(subframes_slSS_0(slssix), h.ls_PSDCH_RP), fprintf('Check for possible SLSS and PSDCH conflict in subframe #%i\n', subframes_slSS_0(slssix)); end
                 end
                 
             end % syncConfig.networkControlledSyncTx
@@ -384,25 +391,36 @@ classdef SL_Discovery
             h.subframes_SLSS = subframes_slSS;
             
             fprintf('=======================================================\n');
-            fprintf('Reference Subframes \n');
-            fprintf('=======================================================\n');
-            fprintf('( SLSS Subframes : '); fprintf('%i ',h.subframes_SLSS); fprintf(')\n');
+            fprintf('( SLSS Subframes for Period #0 : '); fprintf('%i ', subframes_slSS_0); fprintf(')\n');
+            
+            % now assign for all potential periods in a full SFN cycle subframes = 0..10239)
+            N_slss_periods = 10240/length(discSubframes_0); %period #0 already set
+            subframes_slSS = [subframes_slSS_0];
+            for i=1:N_slss_periods-1
+                subframes_slSS = [subframes_slSS; subframes_slSS_0 + i*length(discSubframes_0)];
+            end
+            h.subframes_SLSS = subframes_slSS;
             
         end % function : GetSyncResources
         
-        function [m_PSDCH_selected, l_PSDCH_selected] = GetResourcesPerUE (h)
+        function h = GetResourcesPerUE (varargin)
+            
+            % Calculations are done for Period #0. Finally adjustment for
+            % actual Period is made.
             %Extract UE-specific resource allocation (36.213 - 14.3.1)
             
-            fprintf('=======================================================\n');
-            fprintf('UE-based PSDCH Resource Allocation \n');
-            fprintf('=======================================================\n');
+            %fprintf('=======================================================\n');
+            %fprintf('UE-based PSDCH Resource Allocation \n');
+            %fprintf('=======================================================\n');
+            
+            h = varargin{1};
             
             if isequal(h.discType,'Type1')
-                fprintf('Discovery Type1.\n');
+                %fprintf('Discovery Type1.\n');
                 
-                num_of_msgs = length(h.n_PSDCHs);                
-                m_PSDCH_selected   = cell(num_of_msgs,h.NTX_SLD);         % selected PRBs for each tx
-                l_PSDCH_selected   = -ones(num_of_msgs,h.NTX_SLD);        % selected subframe for each tx
+                num_of_msgs = length(h.n_PSDCHs);
+                ms   = cell(num_of_msgs,h.NTX_SLD);         % selected PRBs for each tx
+                ls   = -ones(num_of_msgs,h.NTX_SLD);        % selected subframe for each tx
                 
                 for i=0:num_of_msgs-1
                     n_PSDCH = h.n_PSDCHs(i+1);
@@ -414,22 +432,23 @@ classdef SL_Discovery
                         a_ij = mod( (j-1)*floor(h.Nf/h.NTX_SLD) + floor(n_PSDCH/h.Nt) , h.Nf);
                         l_ij = h.NTX_SLD*b1_i + j - 1;
                         
-                        m_PSDCH_selected{i+1,j}   = [h.ms_PSDCH_RP(2*a_ij+1),h.ms_PSDCH_RP(2*a_ij+1+1)];
-                        l_PSDCH_selected(i+1,j)   = h.ls_PSDCH_RP(l_ij+1);
+                        ms{i+1,j}   = [h.ms_PSDCH_RP(2*a_ij+1),h.ms_PSDCH_RP(2*a_ij+1+1)];
+                        ls(i+1,j)   = h.ls_PSDCH_RP(l_ij+1);
                         
                         % info messages
-                        fprintf('\tIn Transmission %i/%i: ',j,h.NTX_SLD);
-                        fprintf('\tSelected PRBs: [%2i,%2i], ', m_PSDCH_selected{i+1,j}(1),m_PSDCH_selected{i+1,j}(2));
-                        fprintf('Selected Subframe: [%3i] \n',l_PSDCH_selected(i+1,j));
+                        %fprintf('D2D Discovery Resource Index (n_PSDCH): %i\n',n_PSDCH);
+                        %fprintf('\tIn Transmission %i/%i: ',j,h.NTX_SLD);
+                        %fprintf('\tSelected PRBs: [%2i,%2i], ', ms{i+1,j}(1),ms{i+1,j}(2));
+                        %fprintf('Selected Subframe: [%3i] \n',ls(i+1,j));
                     end % all re-tx per msg
                 end % all msgs
-            
+                
             elseif isequal(h.discType,'Type2B')
                 
-                fprintf('Discovery Type1.\n');
-                num_of_msgs = length(allocInfo.discPRB_Index);                                    
-                m_PSDCH_selected   = cell(num_of_msgs,h.NTX_SLD);         % selected PRBs for each tx
-                l_PSDCH_selected   = -ones(num_of_msgs,h.NTX_SLD);        % selected subframes for each tx
+                %fprintf('Discovery Type1.\n');
+                num_of_msgs = length(allocInfo.discPRB_Index);
+                ms   = cell(num_of_msgs,h.NTX_SLD);         % selected PRBs for each tx
+                ls   = -ones(num_of_msgs,h.NTX_SLD);        % selected subframes for each tx
                 
                 for i=0:num_of_msgs-1
                     fprintf('D2D Discovery Mesage Config %i/%i\n',i+1,num_of_msgs);
@@ -471,6 +490,15 @@ classdef SL_Discovery
                 end % num of msgs
                 
             end % discovery type
+            
+            if nargin ==1
+                h.l_PSDCH_selected = ls;
+            elseif nargin == 2
+                period_ix = varargin{2};
+                h.l_PSDCH_selected = ls + period_ix*h.discPeriod_r12*10;
+            end
+            h.m_PSDCH_selected = ms;
+            
         end % function: GetResourcesPerUE
         
         function output_seq = GenerateDiscoveryTB(varargin)
@@ -495,12 +523,12 @@ classdef SL_Discovery
             a_seq = input_seq;
             [ b_seq ] = tran_crc24A( a_seq,  'encode');  
                            
-            % 36.212 - 5.3.2.3	Channel coding (CONVOLUTIONAL CODING INSTEAD OF TC is currently used!!)
+            % 36.212 - 5.3.2.3	Channel coding
             c_seq = b_seq;
-            d0_seq = tran_conv_coding(c_seq, 0);
+            d0_seq =  tran_turbo_coding(c_seq, 0);
             
             % 36.212 - 5.3.2.4	Rate matching
-            e0_seq = tran_conv_ratematch( d0_seq, h.psdch_BitCapacity, 'encode' );      
+            e0_seq = tran_turbo_ratematch( d0_seq, h.psdch_BitCapacity, 0, 'encode' );
            
             % dummy assignment to follow 36.212 standard notation
             f0_seq = e0_seq;    
@@ -571,15 +599,11 @@ classdef SL_Discovery
             % dummy assignment to follow 36.211 standard notation
             e0_seq_rec = f0_seq_rec;
 
-            % 36.211 - 5.3.2.4	Rate matching Recovery (CC instead of TC!!!!)
-            d0_seq_rec = tran_conv_ratematch( e0_seq_rec, 3*(h.discMsg_TBsize+24), 'recover' );
+            % 36.211 - 5.3.2.4	Rate matching Recovery
+            d0_seq_rec = tran_turbo_ratematch( e0_seq_rec, 3*(h.discMsg_TBsize+24)+12, 0, 'recover' );             
                         
-            % 5.3.2.3	Channel decoding (CC instead of TC!!!)
-            if isequal(decodingType,'Hard')
-                c_seq_rec = tran_conv_coding( d0_seq_rec,1 );
-            elseif isequal(decodingType,'Soft')
-                c_seq_rec = tran_conv_coding( d0_seq_rec,2 );
-            end
+            % 5.3.2.3	Channel decoding 
+            c_seq_rec  = tran_turbo_coding (double(d0_seq_rec), 1);           
             
             % 5.3.2.1	Transport block CRC recovery     
             b_seq_rec = double(c_seq_rec);
