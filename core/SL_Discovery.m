@@ -45,7 +45,7 @@ classdef SL_Discovery
     
     properties (SetAccess = private) % properties configured throughout various class operations
         NFFT;                               % FFT size
-        chanSRate;                          % channel sampling rate    
+        chanSRate;                          % channel sampling rate
         cpLen0;                             % CP length for the 0th symbol
         cpLenR;                             % CP length for all but 0th symbols
         NSLsymb;                            % Number of SL symbols per slot, depending on CPconf
@@ -54,7 +54,7 @@ classdef SL_Discovery
         l_PSDCH_DMRS;                       % 36.211, 5.5.2.1.2: location of DMRS: 3 for normal cp, 2 for extended cp
         Msc_PSDCH;                          % bandwidth of PSDCH in # subcarriers
         psdch_BitCapacity;                  % bit capacity of PSDCH channel
-        b_scramb_seq;                       % generated scrambling Sequence in PSDCH processing (based on c_init)        
+        b_scramb_seq;                       % generated scrambling Sequence in PSDCH processing (based on c_init)
         cmux;                               % PUSCH interleaver multiplier for SL-DCH processing
         muxintlv_indices;                   % generated PUSCH interleaver indices for SL-DCH processing
         psdch_dmrs_seq;                     % the psdch dmrs sequence
@@ -62,13 +62,13 @@ classdef SL_Discovery
         ls_PSDCH_RP                         % discovery time resource pool: subframes
         ms_PSDCH_RP                         % discovery frequency resource pool: PRBs
         Nt                                  % time resources size
-        Nf                                  % frequency resources size 
+        Nf                                  % frequency resources size
         NTX_SLD                             % number transmissions per discovery message
         subframes_SLSS;                     % subframes where SL-SS will be transmitted
         l_PSDCH_selected;                   % UE-specific allocated subframes
-        m_PSDCH_selected;                   % UE-specific allocated PRBs  
+        m_PSDCH_selected;                   % UE-specific allocated PRBs
         subframe_index;                     % actual subframe counter (0..10239) known for tx/ recovered from BCH decoding for Rx
-
+        
     end
     
     properties (Hidden) % non-changeable properties
@@ -77,14 +77,14 @@ classdef SL_Discovery
         NRBsc                   = 12;    % Resource block size in the frequency domain, expressed as a number of subcarriers
         c_init                  = 510;   % 36.211, 9.5.1: initializer for PSDCH scrambling sequence
         discMsg_TBsize          = 232;   % Bit-Msg Size --> 24.334 - Table 11.2.5.1.1: PC5_DISCOVERY message content for open ProSe direct discovery
-
+        
     end
     
     methods
-    
+        
         function h = SL_Discovery(varargin)
             %Constructor & Initialization routine
-   
+            
             % --------------------------- base config inputs ---------------------------
             slBaseConfig = varargin{1};
             
@@ -108,7 +108,7 @@ classdef SL_Discovery
                 h.cp_Len_r12 = 'Normal';
             end
             assert(isequal(h.cp_Len_r12,'Normal') | isequal(h.cp_Len_r12,'Extended'),'Invalid CP Length mode. Select from {Normal,Extended}');
-  
+            
             % --------------------------- sync config inputs ---------------------------
             slSyncConfig = varargin{2};
             if isfield(slSyncConfig,'syncOffsetIndicator')
@@ -124,11 +124,11 @@ classdef SL_Discovery
                 h.syncPeriod = 40;
             end
             assert(h.syncPeriod>=1 & h.syncPeriod<=40,'Invalid setting of Period. Valid range: 1..40');
-   
+            
             % --------------------------- disc config inputs ---------------------------
             % reflect SIB19/RRCReconfiguration IEs (36.331)
             slDiscConfig = varargin{3};
-             
+            
             if isfield(slDiscConfig,'discPeriod_r12')
                 h.discPeriod_r12 = slDiscConfig.discPeriod_r12;
             else % default
@@ -139,7 +139,7 @@ classdef SL_Discovery
                 h.discPeriod_r12==32 | h.discPeriod_r12==64 | h.discPeriod_r12==128 | h.discPeriod_r12==256 | h.discPeriod_r12==512 | h.discPeriod_r12==1024,...
                 'Invalid setting of discPeriod-r12. Valid values: 4,7,8,14,16,28,32,64,128,256,512,1024');
             
-                
+            
             if isfield(slDiscConfig,'offsetIndicator_r12')
                 h.offsetIndicator_r12 = slDiscConfig.offsetIndicator_r12;
             else % default
@@ -153,7 +153,7 @@ classdef SL_Discovery
                 h.subframeBitmap_r12 = [0; ones(39,1)]; % all available except first subframe (used for broad/sync)
             end
             assert(length(h.subframeBitmap_r12)==h.Disc_subframeBitmapSize, 'Invalid subframeBitmap-r12 size. Valid value: 40');
-
+            
             
             if isfield(slDiscConfig,'numRepetition_r12')
                 h.numRepetition_r12 = slDiscConfig.numRepetition_r12;
@@ -161,14 +161,14 @@ classdef SL_Discovery
                 h.numRepetition_r12 = 5;
             end
             assert(h.numRepetition_r12>=1 & h.numRepetition_r12<=5,'Invalid setting of numRepetition-r12. Valid range: 1..5');
-
+            
             if isfield(slDiscConfig,'prb_Start_r12')
                 h.prb_Start_r12 = slDiscConfig.prb_Start_r12;
             else % default
                 h.prb_Start_r12 = 2;
             end
             assert(h.prb_Start_r12>=0 & h.prb_Start_r12<=99,'Invalid setting of prb_Start-r12. Valid range: 0..99');
-
+            
             if isfield(slDiscConfig,'prb_End_r12')
                 h.prb_End_r12 = slDiscConfig.prb_End_r12;
             else % default
@@ -180,35 +180,35 @@ classdef SL_Discovery
                 h.prb_Num_r12 = slDiscConfig.prb_Num_r12;
             else % default
                 h.prb_Num_r12 = 10;
-            end            
+            end
             assert(h.prb_Num_r12>=1 & h.prb_Num_r12<=100,'Invalid setting of prb_Num-r12. Valid range: 1..100');
             
-             if isfield(slDiscConfig,'numRetx_r12')
+            if isfield(slDiscConfig,'numRetx_r12')
                 h.numRetx_r12 = slDiscConfig.numRetx_r12;
             else % default
                 h.numRetx_r12 = 3;
-            end            
+            end
             assert(h.numRetx_r12>=0 & h.numRetx_r12<=3,'Invalid setting of numRetx-r12. Valid range: 0..3');
-
+            
             if isfield(slDiscConfig,'discType')
                 h.discType = slDiscConfig.discType;
             else % default
                 h.discType = 'Type1';
-            end            
+            end
             assert(isequal(h.discType,'Type1') | isequal(h.discType,'Type2B'),'Invalid Discovery type. Select from {Type1,Type2B}');
-        
+            
             if isfield(slDiscConfig,'networkControlledSyncTx')
                 h.networkControlledSyncTx = slDiscConfig.networkControlledSyncTx;
             else % default
                 h.networkControlledSyncTx = 1;
-            end            
+            end
             assert(isequal(h.networkControlledSyncTx,0) |isequal(h.networkControlledSyncTx,1),'Invalid networkControlledSyncTx setting. Select from {0,1}');
-                    
+            
             if isfield(slDiscConfig,'syncTxPeriodic')
                 h.syncTxPeriodic = slDiscConfig.syncTxPeriodic;
             else % default
                 h.syncTxPeriodic = 1;
-            end            
+            end
             assert(isequal(h.syncTxPeriodic,0) |isequal(h.syncTxPeriodic,1),'Invalid syncTxPeriodic setting. Select from {0,1}');
             
             
@@ -287,22 +287,22 @@ classdef SL_Discovery
             
             % Pre-generate scrambling sequence for PSDCH processing (36.211/9.5.1)
             h.b_scramb_seq = phy_goldseq_gen (h.psdch_BitCapacity, h.c_init); % generate scramb-seq: initialized at the start of each subframe with c_init = 510
-
+            
             % scrambling sequence multiplier calculation: needed in pusch interleaving (36.212 5.2.2.7 / 5.2.2.8)
             h.cmux = 2*(h.NSLsymb-1);
             % indices needed for PUSCH interleaving (36.212 5.2.2.7 / 5.2.2.8)
-            % Inputs: length of f0_seq, h.cmux for SL, 2 for QPSK, 1 for single-layer            
+            % Inputs: length of f0_seq, h.cmux for SL, 2 for QPSK, 1 for single-layer
             h.muxintlv_indices =  tran_uplink_MuxIntlvDataOnly_getIndices(  h.psdch_BitCapacity, h.cmux, 2, 1 );
             
             % PSDCH DM-RS SEQUENCE GENERATION (36.211-9.8): notice that this is the same for all subframes so it can be precomputed
-            % 1) create object, 2) get sequence. 
-            % Inputs: 
+            % 1) create object, 2) get sequence.
+            % Inputs:
             % Mode  : psdch
             % N_PRB : Number of PSDCH PRBs. It is fixed to DiscMsg_PHY_NPRBs = 2 (24 subcarriers)
-            % We cannot yet map it to the grid because we don't know the exact UE-specific subscarriers          
+            % We cannot yet map it to the grid because we don't know the exact UE-specific subscarriers
             h_psdch_dmrs = SL_DMRS(struct('Mode','psdch','N_PRB',h.DiscMsg_PHY_NPRBs));
             h.psdch_dmrs_seq = h_psdch_dmrs.DMRS_seq();
-     
+            
             % Extract discovery resource pool for given input configuration
             h = GetDiscResourcePool(h);
             
@@ -310,7 +310,7 @@ classdef SL_Discovery
             h = GetSyncResources (h); % output: h_slDisc.subframes_SLSS --> sync/broad
             
             % Extract UE-specific resource allocation
-            %h = GetResourcesPerUE (h);
+            h = GetResourcesPerUE (h);
             
         end % function: SL_Discovery
         
@@ -331,7 +331,7 @@ classdef SL_Discovery
             Nprime = NB*h.numRepetition_r12;
             b = -ones(Nprime,1);
             b(:,1) = a(mod((0:Nprime-1),NB)+1,1);
-       
+            
             % subframe pool (0-based) offset not considered
             h.ls_PSDCH_RP = find(b==1) - 1;
             % add DiscPeriods(1,1) to h.ls_PSDCH for getting the actual subframe counter
@@ -361,7 +361,7 @@ classdef SL_Discovery
             
             
         end % function : GetDiscResourcePool
-               
+        
         function h = GetSyncResources (h)
             %Get subframe resources for transmitting/receiving SL-SSs (36.331 - 5.10.7.3)
             
@@ -387,9 +387,6 @@ classdef SL_Discovery
                 end
                 
             end % syncConfig.networkControlledSyncTx
-            % class member assignment
-            h.subframes_SLSS = subframes_slSS;
-            
             fprintf('=======================================================\n');
             fprintf('( SLSS Subframes for Period #0 : '); fprintf('%i ', subframes_slSS_0); fprintf(')\n');
             
@@ -467,7 +464,7 @@ classdef SL_Discovery
                     % init
                     alphas(1,1) = h.discPRB_Index(i+1);
                     betas(1,1) = h.discSF_Index(i+1);
-
+                    
                     % rest
                     for j = 1:h.NTX_SLD
                         if j == 1
@@ -485,7 +482,7 @@ classdef SL_Discovery
                         % info msgs
                         %fprintf('\tIn Transmission %i/%i : ',j,h.NTX_SLD);
                         %fprintf('\tSelected PRBs: [%3i,%3i], ', m_PSDCH_selected{1,j}(1),m_PSDCH_selected{1,j}(2));
-                        %fprintf('Selected Subframe (within period): [%3i] \n',l_PSDCH_selected(1,j));                        
+                        %fprintf('Selected Subframe (within period): [%3i] \n',l_PSDCH_selected(1,j));
                     end % re-tx of current msg
                 end % num of msgs
                 
@@ -502,8 +499,8 @@ classdef SL_Discovery
         end % function: GetResourcesPerUE
         
         function output_seq = GenerateDiscoveryTB(varargin)
-          %Create dummy DISCOVERY Transport Block, identical to MAC PDU: 24.334 - Table 11.2.5.1.1   
-          % Inputs: object (h) and an (optional) seed.
+            %Create dummy DISCOVERY Transport Block, identical to MAC PDU: 24.334 - Table 11.2.5.1.1
+            % Inputs: object (h) and an (optional) seed.
             h = varargin{1};
             if nargin == 2
                 rng(varargin{2}); % fix seed
@@ -518,30 +515,30 @@ classdef SL_Discovery
             
             % input : discovery TB
             % output: symbol-sequence at the output of psdch encoder and pre-precoder output
-  
+            
             % 36.212 - 5.3.2.1	Transport block CRC attachment
             a_seq = input_seq;
-            [ b_seq ] = tran_crc24A( a_seq,  'encode');  
-                           
+            [ b_seq ] = tran_crc24A( a_seq,  'encode');
+            
             % 36.212 - 5.3.2.3	Channel coding
             c_seq = b_seq;
             d0_seq =  tran_turbo_coding(c_seq, 0);
             
             % 36.212 - 5.3.2.4	Rate matching
             e0_seq = tran_turbo_ratematch( d0_seq, h.psdch_BitCapacity, 0, 'encode' );
-           
+            
             % dummy assignment to follow 36.212 standard notation
-            f0_seq = e0_seq;    
+            f0_seq = e0_seq;
             
             % 36.212 5.2.2.7 / 5.2.2.8 PUSCH Interleaving without any control information
             g0_seq = f0_seq(h.muxintlv_indices);
-                        
+            
             % phy processing initialization
             b_seq = g0_seq;
-                        
-            % 36.211 - 9.5.1	Scrambling            
+            
+            % 36.211 - 9.5.1	Scrambling
             b_seq_tilde = mod(b_seq + h.b_scramb_seq, 2);
-                        
+            
             % 36.211 - 9.5.2	Modulation:
             d_seq = phy_modulate(b_seq_tilde, 'QPSK');
             
@@ -552,8 +549,8 @@ classdef SL_Discovery
             y_seq = phy_transform_precoding(x_seq,h.Msc_PSDCH);
             
             % returned sequence
-            output_seq = y_seq;                    
-                                    
+            output_seq = y_seq;
+            
         end % function SL_DCH_PSDCH_Encode
         
         function [output_seq, CRCerror_flg, d_seq_rec] = SL_DCH_PSDCH_Recover(h, input_seq, decodingType)
@@ -574,38 +571,38 @@ classdef SL_Discovery
             % 36.211 - 9.5.3 Layer De-Mapping
             d_seq_rec = x_seq_rec;
             
-            %  36.211 - 9.5.2 Demodulation            
+            %  36.211 - 9.5.2 Demodulation
             if isequal(decodingType,'Hard')
                 b_seq_tilde_rec = phy_demodulate(d_seq_rec,'QPSK');
             elseif isequal(decodingType,'Soft')
                 b_seq_tilde_rec = phy_symbolsTosoftbits_qpsk( d_seq_rec );
             end
             
-            %  36.211 - 9.5.1	Descrambling     
+            %  36.211 - 9.5.1	Descrambling
             if isequal(decodingType,'Hard')
                 b_seq_rec = mod(b_seq_tilde_rec + h.b_scramb_seq, 2); % hard descramble
-            elseif isequal(decodingType,'Soft')               
+            elseif isequal(decodingType,'Soft')
                 b_scramb_seq_soft = -(2*h.b_scramb_seq-1);            % transform it to soft version (bit 0 --> +1, bit 1 --> -1)
                 b_seq_rec = b_seq_tilde_rec.*b_scramb_seq_soft;       % soft scrambling
-            end            
+            end
             
             % PHY processing completion
             psdch_output_recovered = b_seq_rec;
             
-            % 36.212 5.2.2.7 / 5.2.2.8 PUSCH De-Interleaving without any control information  
-            f0_seq_rec = -1000*ones(length(psdch_output_recovered),1); 
+            % 36.212 5.2.2.7 / 5.2.2.8 PUSCH De-Interleaving without any control information
+            f0_seq_rec = -1000*ones(length(psdch_output_recovered),1);
             f0_seq_rec(h.muxintlv_indices) = psdch_output_recovered;
             
             % dummy assignment to follow 36.211 standard notation
             e0_seq_rec = f0_seq_rec;
-
-            % 36.211 - 5.3.2.4	Rate matching Recovery
-            d0_seq_rec = tran_turbo_ratematch( e0_seq_rec, 3*(h.discMsg_TBsize+24)+12, 0, 'recover' );             
-                        
-            % 5.3.2.3	Channel decoding 
-            c_seq_rec  = tran_turbo_coding (double(d0_seq_rec), 1);           
             
-            % 5.3.2.1	Transport block CRC recovery     
+            % 36.211 - 5.3.2.4	Rate matching Recovery
+            d0_seq_rec = tran_turbo_ratematch( e0_seq_rec, 3*(h.discMsg_TBsize+24)+12, 0, 'recover' );
+            
+            % 5.3.2.3	Channel decoding
+            c_seq_rec  = tran_turbo_coding (double(d0_seq_rec), 1);
+            
+            % 5.3.2.1	Transport block CRC recovery
             b_seq_rec = double(c_seq_rec);
             [ a_seq_rec, CRCerror_flg ] = tran_crc24A( b_seq_rec, 'recover' );
             
@@ -624,9 +621,9 @@ classdef SL_Discovery
             h.subframe_index = subframe_counter; % timing
             
             fprintf('\nCreating discovery subframe for subframe %i...\n',subframe_counter);
-             % locate message(s) scheduled for current subframe (it could be zero, one or more than one)
-             % msgIndices: the distinct msg id
-             % txIndices : transmission opportunity of specific msg
+            % locate message(s) scheduled for current subframe (it could be zero, one or more than one)
+            % msgIndices: the distinct msg id
+            % txIndices : transmission opportunity of specific msg
             [msgIndices,txIndices] = find(subframe_counter==h.l_PSDCH_selected);
             
             % create subframe
@@ -636,7 +633,7 @@ classdef SL_Discovery
                 % assigned prbs for current msg/tx opportunity
                 current_prbs = h.m_PSDCH_selected{ix,txIndices(ix)};
                 fprintf('\tLoading Message for n_PSDCH = %3i, transmission %i/%i ',h.n_PSDCHs(msgIndices(ix)),txIndices(ix),size(h.l_PSDCH_selected,2));
-                fprintf('( PRBs: '); fprintf('%i ', current_prbs(:)); fprintf(')\n');                
+                fprintf('( PRBs: '); fprintf('%i ', current_prbs(:)); fprintf(')\n');
                 % Ggenerate a random discovery TB (the 2nd argument is optional. it used for setting a fixed seed)
                 discTB = GenerateDiscoveryTB(h, subframe_counter);
                 % transport and physical channel processing --> psdch sequence
@@ -650,38 +647,39 @@ classdef SL_Discovery
                 % add to total grid
                 tx_output_grid = tx_output_grid +  tx_output_grid_current;
                 % time-domain transformation: in standard-compliant sidelink waveforms the last symbol shoul be zeroed. This is not done here.
-                tx_output = phy_ofdm_modulate_per_subframe(struct(h), tx_output_grid);                
-                % visually illustrate resource mapping                
+                tx_output = phy_ofdm_modulate_per_subframe(struct(h), tx_output_grid);
+                % visually illustrate resource mapping
                 % visual_subframeGridGraphic(tx_output_grid);
             end % all messages
             
             % return sequence
             output_seq = tx_output;
-                        
+            
         end % function : CreateSubframe
         
-        function  discovered_msgs = DiscoveryMonitoring(h, input_seq, subframe_counter)
+        function  discovered_msgs = DiscoveryMonitoring(h, input_seq, subframe_counter, rxConfig)
             %Searches for discovery messages in input_seq waveform samples
             %based on given configuration in h at a specific subframe.
             
             discovered_msgs = []; % stores discovered messages. each element is a struct containing subframe counter, nPSDCH and the message
             
-            % based on discovery configuration look for potential messages          
+            % based on discovery configuration look for potential messages
             [msgIndices,txIndices] = find(subframe_counter==h.l_PSDCH_selected);
             
             for ix = 1:length(msgIndices)
                 % msg info
                 current_prbs = h.m_PSDCH_selected{ix,txIndices(ix)};
-                nPSDCH       = h.n_PSDCHs(msgIndices(ix));                
-                % recovery processing                
+                nPSDCH       = h.n_PSDCHs(msgIndices(ix));
+                % recovery processing
                 % ofdm demodulation
                 rx_input_grid   = phy_ofdm_demodulate_per_subframe(struct(h), input_seq);
                 % equalization
-                ce_params = struct('Method','LS', 'fd',0*(1/h.chanSRate),...
-                    'N_FFT', h.NFFT,'N_cp',[h.cpLen0, h.cpLenR],'N_f',h.Msc_PSDCH,'NSLsymb',h.NSLsymb,'l_DMRS',h.l_PSDCH_DMRS);                
-                psdch_rx_posteq = phy_equalizer(ce_params, h.psdch_dmrs_seq, h.l_PSDCH, prbsTosubs(current_prbs(:), h.NRBsc), rx_input_grid);                
+                ce_params = struct('Method',rxConfig.chanEstMethod, 'fd',rxConfig.timeVarFactor*(1/h.chanSRate),...
+                    'N_FFT', h.NFFT,'N_cp',[h.cpLen0, h.cpLenR],'N_f',h.Msc_PSDCH,'NSLsymb',h.NSLsymb,'l_DMRS',h.l_PSDCH_DMRS);
+                
+                psdch_rx_posteq = phy_equalizer(ce_params, h.psdch_dmrs_seq, h.l_PSDCH, prbsTosubs(current_prbs(:), h.NRBsc), rx_input_grid);
                 % transport and physical channel processing
-                [msg, crcerr, psdch_dseq_rx] = SL_DCH_PSDCH_Recover(h, psdch_rx_posteq, 'Soft');
+                [msg, crcerr, psdch_dseq_rx] = SL_DCH_PSDCH_Recover(h, psdch_rx_posteq, rxConfig.decodingType);
                 % check recovery result
                 if (crcerr==0 && ~all(msg==0))
                     fprintf('\t[At Subframe %5i: Found nPSDCH = %3i, CRC Err Flg = %i]\n', subframe_counter, nPSDCH, crcerr);
@@ -689,13 +687,13 @@ classdef SL_Discovery
                     discovered_msgs = [discovered_msgs; struct('subframe_counter',subframe_counter,'nPSDCH',nPSDCH, 'msg',msg)];
                 end
             end % all mgs
-                        
+            
         end % function : DiscoveryMonitoring
         
         function DecodeQualEstimate (h, decoded_bit_seq, recovered_qpskin_seq)
             %PSDCH decode quality estimation
             persistent x r; % x is used for storing ideal regenerated sequences, r for the received.
-   
+            
             % measure decode quality
             % regenerate psbch output
             [~, dseq_tx_regen] = SL_DCH_PSDCH_Encode(h, decoded_bit_seq);
@@ -711,15 +709,14 @@ classdef SL_Discovery
             fprintf('PSDCH Decoding Qual Evaluation [CUMULATIVE Stats]: Bit Errors = %i/%i (BER = %.4f), SNR approx (dB) = %.3f\n', ...
                 sum(bitseq_Tx~=bitseq_Rx), length(bitseq_Rx), sum(bitseq_Tx~=bitseq_Rx)/length(bitseq_Rx), 10*log10(1/(postEqualisedEVM_rms^2)));%
             % INSTANCE
-%             postEqualisedEVM_rms_instance=sqrt(mean(abs((recovered_qpskin_seq-dseq_tx_regen)/sqrt(mean(abs(dseq_tx_regen.^2)))).^2));
-%             bitseq_Tx_instance = lteSymbolDemodulate(dseq_tx_regen,'QPSK','Hard');
-%             bitseq_Rx_instance = lteSymbolDemodulate(recovered_qpskin_seq,'QPSK','Hard');
-%             fprintf('PSDCH Decoding Qual Evaluation [INSTANCE Stats]: Bit Errors = %i/%i (BER = %.4f), SNR approx (dB) = %.3f\n', ...
-%                 sum(bitseq_Tx_instance~=bitseq_Rx_instance), length(bitseq_Rx_instance), sum(bitseq_Tx_instance~=bitseq_Rx_instance)/length(bitseq_Rx_instance), 10*log10(1/(postEqualisedEVM_rms_instance^2)));           
+            %             postEqualisedEVM_rms_instance=sqrt(mean(abs((recovered_qpskin_seq-dseq_tx_regen)/sqrt(mean(abs(dseq_tx_regen.^2)))).^2));
+            %             bitseq_Tx_instance = lteSymbolDemodulate(dseq_tx_regen,'QPSK','Hard');
+            %             bitseq_Rx_instance = lteSymbolDemodulate(recovered_qpskin_seq,'QPSK','Hard');
+            %             fprintf('PSDCH Decoding Qual Evaluation [INSTANCE Stats]: Bit Errors = %i/%i (BER = %.4f), SNR approx (dB) = %.3f\n', ...
+            %                 sum(bitseq_Tx_instance~=bitseq_Rx_instance), length(bitseq_Rx_instance), sum(bitseq_Tx_instance~=bitseq_Rx_instance)/length(bitseq_Rx_instance), 10*log10(1/(postEqualisedEVM_rms_instance^2)));
         end % function : DecodeQualEstimate
         
         
-    end % methods    
+    end % methods
 end % class
 
-   

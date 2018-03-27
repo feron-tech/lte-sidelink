@@ -12,7 +12,7 @@ samples_per_subframe = h_slBroad_rx.samples_per_subframe;
 
 %% Start block-by-block processing
 % input subframes (potential, before sync)
-N_blocks = floor(length(rx_input)/h_slBroad_rx.samples_per_subframe);
+N_blocks = floor(length(rx_input)/h_slBroad_rx.samples_per_subframe)
 
 % define counters
 counter              = 1;  % block samples counter
@@ -117,7 +117,7 @@ for block = 0:N_blocks-1 % I/Q block processing, as arriving from digitizer
                 % Case 2: Discovery Subframe
                 elseif ismember(local_subframe_index, h_slDisc_rx.l_PSDCH_selected)
                     fprintf('Monitoring DCH in the expected subframe (%i)\n', local_subframe_index);
-                    discovered_msgs_current = DiscoveryMonitoring(h_slDisc_rx, input_signal, local_subframe_index);
+                    discovered_msgs_current = DiscoveryMonitoring(h_slDisc_rx, input_signal, local_subframe_index, rxConfig);
                     % keep all messages                    
                     discovered_msgs_recovered = [discovered_msgs_recovered; discovered_msgs_current];
                 end
