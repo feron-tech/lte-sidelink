@@ -17,13 +17,13 @@ classdef SL_Discovery
     %Contributors: Antonis Gotsis (antonisgotsis)
     
     
-    properties (SetAccess = protected, GetAccess = public) % properties configured by class calling
+    properties (SetAccess = public, GetAccess = public) % properties configured by class calling
         NSLRB;                    % 6,15,25,50,75,100: Sidelink bandwidth (default: 25)
         NSLID;                    % 0..335: Sidelink Cell-ID (default: 0)
         cp_Len_r12;               % 'Normal','Extended'. Part of SL-CP-Len belonging to DiscResource Pool (default 'Normal')
         syncOffsetIndicator;      % Offset indicator for sync subframe with respect to 0 subframe (default: 0)
         syncPeriod;               % Synchronization subframe period (in # subframes) (default: 40)
-        discPeriod_r12;           % 32,64,128,256,512,1024 radio frames (Part of SL-DiscResourcePool: Indicates the period over which resources are allocated in a cell for discovery message transmission/reception, see PSDCH period in TS 36.213 [23]. Value in number of radio frames. Value rf32 corresponds to 32 radio frames, rf64 corresponds to 64 radio frames and so on. ENUMERATED {rf32, rf64, rf128, rf256, rf512, rf1024, rf16-v13x0, spare}) (default: 32)
+        discPeriod_r12;           % 4,7,8,14,16,28,32,64,128,256,512,1024 radio frames (Part of SL-DiscResourcePool: Indicates the period over which resources are allocated in a cell for discovery message transmission/reception, see PSDCH period in TS 36.213 [23]. Value in number of radio frames. Value rf32 corresponds to 32 radio frames, rf64 corresponds to 64 radio frames and so on. ENUMERATED {rf32, rf64, rf128, rf256, rf512, rf1024, rf16-v13x0, spare}) (default: 32)
         offsetIndicator_r12;      % 0..10239 (Part of SL-TF-ResourceConfig/SL-DiscResourcePool): The IE SL-OffsetIndicator indicates the offset of the pool of resources relative to SFN 0 of the cell from which it was obtained or, when out of coverage, relative to DFN 0.) (default: 0)
         subframeBitmap_r12;       % size 40 (Part of SL-TF-ResourceConfig: Indicates the subframe bitmap indicating resources used for sidelink. E-UTRAN configures value bs40 for FDD) (default: all-1s except for the 1st element)
         numRepetition_r12;        % 1..5 for FDD (Included in  SL-DiscResourcePool: Indicates the number of times subframeBitmap is repeated for mapping to subframes that occurs within a discPeriod. The highest value E-UTRAN uses is value 5 for FDD) (default: 5)
@@ -40,6 +40,8 @@ classdef SL_Discovery
         a_r12;                    % type-2 only: N1_PSDCH: 1..200 ((SL-HoppingConfig)) (default:1)
         b_r12;                    % type-2 only: N2_PSDCH: 1..10  (SL-HoppingConfig) (default:1)
         c_r12;                    % type-2 only: N3_PSDCH: n1,n5  (SL-HoppingConfig) (default:1)
+        l_PSDCH_selected;         % UE-specific allocated subframes for current period
+        m_PSDCH_selected;         % UE-specific allocated PRBs
     end
     
     
@@ -65,10 +67,7 @@ classdef SL_Discovery
         Nf                                  % frequency resources size
         NTX_SLD                             % number transmissions per discovery message
         subframes_SLSS;                     % subframes where SL-SS will be transmitted
-        l_PSDCH_selected;                   % UE-specific allocated subframes
-        m_PSDCH_selected;                   % UE-specific allocated PRBs
         subframe_index;                     % actual subframe counter (0..10239) known for tx/ recovered from BCH decoding for Rx
-        
     end
     
     properties (Hidden) % non-changeable properties
@@ -77,7 +76,6 @@ classdef SL_Discovery
         NRBsc                   = 12;    % Resource block size in the frequency domain, expressed as a number of subcarriers
         c_init                  = 510;   % 36.211, 9.5.1: initializer for PSDCH scrambling sequence
         discMsg_TBsize          = 232;   % Bit-Msg Size --> 24.334 - Table 11.2.5.1.1: PC5_DISCOVERY message content for open ProSe direct discovery
-        
     end
     
     methods
@@ -129,7 +127,7 @@ classdef SL_Discovery
             % reflect SIB19/RRCReconfiguration IEs (36.331)
             slDiscConfig = varargin{3};
             
-            if isfield(slDiscConfig,'discPeriod_r12')
+            if isfield(slDiscConfig,'discPeriod_r12') % update for Rel.13 where lower values for disc period are defined for the preconfigured mode
                 h.discPeriod_r12 = slDiscConfig.discPeriod_r12;
             else % default
                 h.discPeriod_r12 = 32;
@@ -139,7 +137,7 @@ classdef SL_Discovery
                 h.discPeriod_r12==32 | h.discPeriod_r12==64 | h.discPeriod_r12==128 | h.discPeriod_r12==256 | h.discPeriod_r12==512 | h.discPeriod_r12==1024,...
                 'Invalid setting of discPeriod-r12. Valid values: 4,7,8,14,16,28,32,64,128,256,512,1024');
             
-            
+                
             if isfield(slDiscConfig,'offsetIndicator_r12')
                 h.offsetIndicator_r12 = slDiscConfig.offsetIndicator_r12;
             else % default
@@ -476,8 +474,8 @@ classdef SL_Discovery
                         betas(j+1,1) = mod ( h.a_r12(i+1) + h.c_r12(i+1)*alphas(1,1) + h.Nf*betas(1,1) , h.Nt );
                         l_ij = h.NTX_SLD*betas(j+1,1) + j - 1;
                         
-                        m_PSDCH_selected{1,j}   = [h.ms_PSDCH_RP(2*alphas(j+1,1)+1),h.ms_PSDCH_RP(2*alphas(j+1,1)+1+1)];
-                        l_PSDCH_selected(1,j)   = h.ls_PSDCH_RP(l_ij+1);
+                        ms{1,j}   = [h.ms_PSDCH_RP(2*alphas(j+1,1)+1),h.ms_PSDCH_RP(2*alphas(j+1,1)+1+1)];
+                        ls(1,j)   = h.ls_PSDCH_RP(l_ij+1);
                         
                         % info msgs
                         %fprintf('\tIn Transmission %i/%i : ',j,h.NTX_SLD);
@@ -505,7 +503,6 @@ classdef SL_Discovery
             if nargin == 2
                 rng(varargin{2}); % fix seed
             end
-            
             output_seq = randi([0,1], h.discMsg_TBsize, 1); % dummy message
             
         end
