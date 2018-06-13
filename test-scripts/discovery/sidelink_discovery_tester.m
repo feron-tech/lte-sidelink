@@ -74,7 +74,7 @@ switch NSLRB
 end
             
 % Noise
-SNR_target_dB = 13; % set SNR
+SNR_target_dB = 20; % set SNR
 noise = sqrt((1/2)*10^(-SNR_target_dB/10))*complex(randn(length(tx_output),1), randn(length(tx_output),1)); % generate noise
 rx_input = tx_output + noise; % induce it to the waveform
 
@@ -83,8 +83,8 @@ toff = randi([0,2*samples_per_subframe],1,1) % pick a random offset
 rx_input = [zeros(toff,1); rx_input]; % induce it to the waveform
 
 % Freq-offset
-foff = 0.01; % set an error (%)
-rx_input = rx_input(:).*exp(2i*pi*(0:length(rx_input(:))-1).'*foff/NFFT); % induce it to the waveform
+% foff = 0.01; % set an error (%)
+% rx_input = rx_input(:).*exp(2i*pi*(0:length(rx_input(:))-1).'*foff/NFFT); % induce it to the waveform
 
 % uncomment for bypassing channel
 % rx_input = tx_output;

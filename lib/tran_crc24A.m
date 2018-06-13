@@ -6,19 +6,19 @@ function [output_bitseq, CRCerror_flg] = tran_crc24A( input_bitseq, mode )
 %   mode : 'encoding' for attaching, 'recover' for detecting
 %#codegen
 
-persistent hCRCEnc;
-persistent hCRCDet;
+% persistent hCRCEnc;
+% persistent hCRCDet;
 
-if isempty(hCRCEnc)
+% if isempty(hCRCEnc)
     gCRC = zeros(1,25);
     gCRC(1,25-[24,23,18,17,14,11,10,7,6,5,4,3,1,0])=1;
     hCRCEnc = comm.CRCGenerator('Polynomial', gCRC);
-end
-if isempty(hCRCDet)
+% end
+% if isempty(hCRCDet)
     gCRC = zeros(1,25);
     gCRC(1,25-[24,23,18,17,14,11,10,7,6,5,4,3,1,0])=1;
     hCRCDet = comm.CRCDetector('Polynomial', gCRC);
-end
+% end
 
 
 if isequal(mode, 'encode')

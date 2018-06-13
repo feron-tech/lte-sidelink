@@ -136,18 +136,21 @@ classdef SL_Broadcast
             % PSBCH DM-RS SEQUENCE: notice that this is the same for all subframes so it can be precomputed
             % 1) create object, 2) get sequence, 3)  map to time-frequency grid
             % Inputs: 
-            % Mode  : psbch_mode1 for D2D, psbch_mode3 for V2V (psbch_mode2 is equivalent to mode1 and psbch_mode4 to psbch_mode3)
+            % Mode  : 'psbch_d2d' for D2D, 'psbch_v2x'
             % NSLID : sidelink PCI
             % N_PRB : Number of PBCH PRBs is fixed to 6 (72 subcarriers)
-            h_psbch_dmrs = SL_DMRS(struct('Mode',strcat('psbch_mode',num2str(h.slMode)),'NSLID',h.NSLID,'N_PRB',h.Msc_PSBCH/h.NRBsc));
+            if h.slMode==1 || h.slMode==2, SidelinkMode='D2D';
+            elseif h.slMode==3 || h.slMode==4, SidelinkMode='V2X';
+            end
+            h_psbch_dmrs = SL_DMRS(struct('Mode',strcat('psbch_',SidelinkMode),'NSLID',h.NSLID,'N_PRB',h.Msc_PSBCH/h.NRBsc));
             h.psbch_dmrs_seq = h_psbch_dmrs.DMRS_seq();
             h.psbch_drms_seq_grid = phy_resources_mapper(2*h.NSLsymb, h.NSLRB*h.NRBsc, h.l_PSBCH_DMRS, h.subixs_PSBCH, h.psbch_dmrs_seq);
             
-            % mtlb toolbox comparison
-            %[seq,info] = ltePSBCHDRS(struct('NSLID',h.NSLID,'SidelinkMode','V2X'));
+            % mtlb toolbox comparison            
+            %[seq,info] = ltePSBCHDRS(struct('NSLID',h.NSLID,'SidelinkMode',SidelinkMode));
             %psbchDMRS_ft_mtlb_ok = sum(abs(h.psbch_dmrs_seq-seq).^2)<1e-8
             %if ~psbchDMRS_ft_mtlb_ok, cprintf('red','PSBCH DMRS Generation: error in comparison with matlab toolbox\n'); keyboard; end
-                        
+            
             % create the MIB-SL messages for all subframes in a full tx
             % cycle (10240 subframes). Results stored in property h.SLMIBs
             h.SLMIBs = Encode_SLMIBs(h);

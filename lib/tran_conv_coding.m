@@ -9,7 +9,7 @@ function  output_bitseq  = tran_conv_coding (input_bitseq, mode )
 
 persistent hChanEnc;
 persistent hChanDecH;
-persistent hChanDecS;
+% persistent hChanDecS;
 
 output_bitseq = -1;
 
@@ -74,9 +74,9 @@ elseif mode == 2
     end
     
     % Create the neccessary system objects
-    if isempty(hChanDecS)
+%     if isempty(hChanDecS)
         hChanDecS = comm.ViterbiDecoder(poly2trellis(7, [133 171 165]), 'InputFormat', 'Unquantized', 'TerminationMethod', 'Truncated');
-    end
+%     end
     % Decode Data
     decoded_bitseq_dupl = step(hChanDecS, -[input_bitseq_mixedStream; input_bitseq_mixedStream]); % duplicate input and then decode
     output_bitseq(:) = decoded_bitseq_dupl([D+1:floor(3*D/2), floor(D/2+1):D]); %keep midde 1st half of 2nd part and 2nd half of 1st part

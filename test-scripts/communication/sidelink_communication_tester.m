@@ -2,8 +2,8 @@
 % Contributors: Antonis Gotsis (antonisgotsis), Stelios Stefanatos (steliosstefanatos)
 clear all;
 clc;
-addpath('./core');   % path where core sidelink-specific functionalities are located (Communication Channel, DMRS, Sync, Channel Estimator).
-addpath('./lib');    % path where generic (non-sidelink specific) tx/rx functionalities are located (signal, physical and transport channel blocks).
+addpath('../../core');   % path where core sidelink-specific functionalities are located (Discovery Channel, DMRS, Sync, Channel Estimator).
+addpath('../../lib');    % path where generic (non-sidelink specific) tx/rx functionalities are located (signal, physical and transport channel blocks).
 warning('off','MATLAB:structOnObject'); % used to supress warning messages in struct(obj) calling
 
 %% Configuration

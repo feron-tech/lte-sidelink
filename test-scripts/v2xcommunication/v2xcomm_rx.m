@@ -1,16 +1,16 @@
-function discovery_rx(slBaseConfig, slSyncConfig, slDiscConfig, slUEConfig, rxConfig, rx_input )
-%discovery_rx is a high-level function for recovering sidelink discovery channel transmissions given an arbitrary number of (time-domain) subframes.
-% Information about the input fields can be found at the sidelink_discovery_tester example and the SL_Discovery class.
-% Provide empty structs for default settings 
+function v2xcomm_rx( slBaseConfig, slSyncConfig, slV2XCommConfig, rxConfig, rx_input)
 
-% create objects
-h_slSync_rx  = SL_Sync(slSyncConfig, slBaseConfig); 
-h_slBroad_rx = SL_Broadcast(slBaseConfig, h_slSync_rx.sync_grid);
-h_slDisc_rx  = SL_Discovery(slBaseConfig, slSyncConfig, slDiscConfig, slUEConfig);
 
-samples_per_subframe = h_slBroad_rx.samples_per_subframe;
+%% Create Objects
+h_slSync_rx     = SL_Sync(slSyncConfig, slBaseConfig); 
+h_slBroad_rx    = SL_Broadcast(slBaseConfig, h_slSync_rx.sync_grid);
+h_slV2XComm_rx  = SL_V2XCommunication(slBaseConfig, slSyncConfig, slV2XCommConfig);
+h_slV2XComm_rx  = GetV2XCommResourcePool(h_slV2XComm_rx);
+
 
 %% Start block-by-block processing
+samples_per_subframe = h_slBroad_rx.samples_per_subframe;
+
 % input subframes (potential, before sync)
 N_blocks = floor(length(rx_input)/h_slBroad_rx.samples_per_subframe)
 
@@ -20,16 +20,11 @@ symbols_processed    = 0;  % counter used for going back in time (really :-))
 subframe_counter     = 0;  % system subframe counter
 local_subframe_index = -1; % index for actual subframe timing (recovered from SL-BCH MIB Decoding)
 
-% KPIs
-psbch_detections = []; % stores psbch detection results for all attempts: 1 for successful, 0 for misdetection
-discovered_msgs_recovered = [];
-
 for block = 0:N_blocks-1 % I/Q block processing, as arriving from digitizer
     
     %fprintf('Currently in block %i/%i\n',block, N_blocks-1)
     %% Update buffers
     if block == 0 % dummy initialization for 1st/2nd block
-        %previous_frame = 1/(10^(SNR_target_dB/10)))*complex(randn(samples_per_subframe,1), randn(samples_per_subframe,1));
         previous_frame      = 0.001*complex(randn(samples_per_subframe,1), randn(samples_per_subframe,1));
         post_previous_frame = 0.001*complex(randn(samples_per_subframe,1), randn(samples_per_subframe,1));
     else % normal operation
@@ -78,13 +73,10 @@ for block = 0:N_blocks-1 % I/Q block processing, as arriving from digitizer
         %             [h_slSync_rx.synched_blocks signal(h_slSync_rx.sync_point-h_slSync_rx.cp_guard:h_slSync_rx.sync_point-h_slSync_rx.cp_guard + samples_per_subframe-1)];
 
         % new version: keep last 20
-        % tstart = tic;
         h_slSync_rx.synched_blocks = ...
-            [h_slSync_rx.synched_blocks(:,end-min(size(h_slSync_rx.synched_blocks,2)-1,19):end) signal(h_slSync_rx.sync_point-h_slSync_rx.cp_guard:h_slSync_rx.sync_point-h_slSync_rx.cp_guard + samples_per_subframe-1)];
-        % tmp1 = [tmp1; toc(tstart)];
-        %         keyboard
-
-        %% sync ok, Broadcast recovery
+            [h_slSync_rx.synched_blocks(:,end-min(size(h_slSync_rx.synched_blocks,2)-1,20-1):end) signal(h_slSync_rx.sync_point-h_slSync_rx.cp_guard:h_slSync_rx.sync_point-h_slSync_rx.cp_guard + samples_per_subframe-1)];
+        
+        %% sync ok, Data recovery
         for nn = symbols_processed:-1:1            
             % get subframe index
             % current_sf_index = subframe_counter - nn + 1;
@@ -98,8 +90,7 @@ for block = 0:N_blocks-1 % I/Q block processing, as arriving from digitizer
                     % get timing
                     local_subframe_index = h_slBroad_rx.subframe_index;
                     % move to next subframe
-                    local_subframe_index = local_subframe_index + 1;
-                    if local_subframe_index == 10240, local_subframe_index = 0; end
+                    local_subframe_index = mod(local_subframe_index + 1,10240);
                 end
             else % timing acquired --> we now know actual subframe timing!
                
@@ -107,23 +98,18 @@ for block = 0:N_blocks-1 % I/Q block processing, as arriving from digitizer
                 input_signal = h_slSync_rx.synched_blocks(:,end-nn+1);
                 
                 % Case 1: Broadcast Subframe
-                if ismember(local_subframe_index,  h_slDisc_rx.subframes_SLSS)
-                    fprintf('Trying to decode BCH in the expected subframe (%i)\n', local_subframe_index);
-                    psbch_detections = [psbch_detections; 0]; % initialize result
+                if ismember(local_subframe_index,  h_slV2XComm_rx.subframes_SLSS)
+                    fprintf('Trying to decode BCH in the expected subframe (%i), Energy=%.4f\n', local_subframe_index, mean(abs(input_signal).^2));
                     [msgRecoveredFlag, h_slBroad_rx]  = RecoverSubframe (h_slBroad_rx,  rxConfig, input_signal);
                      % resync subframe counter according to latest bch decoding
                     local_subframe_index = h_slBroad_rx.subframe_index;
-                    psbch_detections(end) = msgRecoveredFlag;
-                % Case 2: Discovery Subframe
-                elseif ismember(local_subframe_index, h_slDisc_rx.l_PSDCH_selected)
-                    fprintf('Monitoring DCH in the expected subframe (%i)\n', local_subframe_index);
-                    discovered_msgs_current = DiscoveryMonitoring(h_slDisc_rx, input_signal, local_subframe_index, rxConfig);
-                    % keep all messages                    
-                    discovered_msgs_recovered = [discovered_msgs_recovered; discovered_msgs_current];
+                % Case 2: (Potential) V2X Comm Subframe
+                elseif ismember(local_subframe_index,  h_slV2XComm_rx.ls_PSCCH_RP)
+                    fprintf('Trying to decode PSCCH in the expected subframe (%i). Energy=%.4f\n', local_subframe_index, mean(abs(input_signal).^2));
+                    h_slV2XComm_rx = RecoverV2XCommSubframe(h_slV2XComm_rx, input_signal, local_subframe_index, rxConfig);                    
                 end
                 % move to next subframe
-                local_subframe_index = local_subframe_index + 1;
-                if local_subframe_index == 10240, local_subframe_index = 0; end
+                local_subframe_index = mod(local_subframe_index + 1,10240);
            end
         end      % symbols_processed
         symbols_processed = 0;
@@ -136,13 +122,4 @@ for block = 0:N_blocks-1 % I/Q block processing, as arriving from digitizer
     
 end % block processing (as they arrive from digitizer)
 
-fprintf('\nOverall PSBCH Detection Ratio = %.2f (%i/%i successful attempts)\n', mean(psbch_detections), sum(psbch_detections), length(psbch_detections));
-
-% analyze recovered discovery messages
-fprintf('\nOverall Recovered Discovery Messages\n');
-
-for ix = 1:length(discovered_msgs_recovered)
-fprintf('\t[At Subframe %5i: Found nPSDCH = %3i]\n', ...
-    discovered_msgs_recovered(ix).subframe_counter, discovered_msgs_recovered(ix).nPSDCH);
 end
-

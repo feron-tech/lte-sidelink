@@ -7,6 +7,7 @@ function [ output_seq ] = tran_conv_ratematch( input_seq, target_outlen, mode )
 %   mode          : encode or recover
 %#codegen
 
+
 % Convolutional Subblock interleaving: Inter-column permutation pattern for sub-block interleaver (36.212 - Table 5.1.4-2)
 Pj = [1, 17, 9, 25, 5, 21, 13, 29, 3, 19, 11, 27, 7, 23, 15, 31, 0, 16, 8, 24, 4, 20, 12, 28, 2, 18, 10, 26, 6, 22, 14, 30] + 1;
 
@@ -61,6 +62,13 @@ for colIX = 1:CccSubBlock
     end
 end
 
+
+
+
+
+
+
+
 %% BIT COLLECTION and SELECTION (5.1.4.2.2)
 Kw = 3*Kp;
 
@@ -72,6 +80,8 @@ for kpix = 1:Kp
         w_IXs(kpix+2*Kp) = v_IXs(kpix)+2*D;
     end
 end
+
+
 
 % implementation #1: LTE specs
 e_IXs = -ones(E,1);
@@ -86,8 +96,11 @@ while k<E
     j=j+1;
 end
 
+
+
+
 %% mode-dependent operation
-if isequal(mode, 'encode')    
+if isequal(mode, 'encode')
     output_seq(:,1) = input_seq(e_IXs);
 elseif isequal(mode, 'recover')
     if E>=3*D
