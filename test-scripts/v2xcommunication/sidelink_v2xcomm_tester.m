@@ -55,6 +55,8 @@ elseif slMode == 4
 end
     
 %% TX
+fprintf('\n\nTx Waveform Processing Starting...\n');
+
 tx_output = v2xcomm_tx( slBaseConfig, slSyncConfig, slV2XCommConfig, slV2XUEconfig );
 
 %% Test Channel (noise, time-offset, freq-offset)
@@ -88,8 +90,6 @@ fprintf('Tx Waveform Passed from Channel...\n');
 
 %% Rx
 fprintf('\n\nRx Waveform Processing Starting...\n');
-
-rxConfig = struct('decodingType',decodingType, 'chanEstMethod',chanEstMethod, 'timeVarFactor',timeVarFactor);
 
 v2xcomm_rx( slBaseConfig, slSyncConfig, slV2XCommConfig, ...
     struct('decodingType',decodingType, 'chanEstMethod',chanEstMethod, 'timeVarFactor',timeVarFactor), ...
